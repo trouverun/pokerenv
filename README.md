@@ -58,7 +58,13 @@ table = Table(active_play, agents, random_seed, low_stack_bbs, high_stack_bbs, h
 
 ### Implement learning loop
 ```python
+iteration = 1
 while True:
+  if iteration == 50:
+      table.hand_history_enabled = True
+      iteration = 1
   table.reset()
   table.play_hand()
+  table.hand_history_enabled = False
+  
 ```
