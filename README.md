@@ -7,12 +7,14 @@ This way neither the main training loop nor the agents have to have any understa
 
 The results of a hand can be printed in to a hand history file, which can be analyzed with any pokerstars compatible tracking software, allowing you to easily track the learning process.
 
+The intended use case is to run massive amounts of actor processes interacting with the environment, querying a separate learner for actions, and updating the policies based on trajectories formed inside the learner, as per the SEED architecture. (https://ai.googleblog.com/2020/03/massively-scaling-reinforcement.html).
+
 ## Example
 
 ### Define an agent
 
 ```python
-ExampleRandomAgent(BaseAgent):
+ExampleRandomAgent:
     def __init__(self, identifier):
         self.identifier = identifier
         self.actions = []
@@ -39,7 +41,7 @@ ExampleRandomAgent(BaseAgent):
 ### Create an environment
 ```python
 active_players = 6
-agents = [ExampleAgent('example_agent_%d' % i) for i in range(6)]
+agents = [ExampleRandomAgent('example_agent_%d' % i) for i in range(6)]
 random_seed = 1
 low_stack_bbs = 50
 high_stack_bbs = 200
