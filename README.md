@@ -33,7 +33,7 @@ ExampleRandomAgent:
             return
         self.observations.append(observation)
         actions_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
-        action = PlayerAction(random.choice(actions_list))
+        chosen = PlayerAction(random.choice(actions_list))
         betsize = 0
         if chosen is PlayerAction.BET:
             betsize = random.uniform(bet_range[0], bet_range[1])
