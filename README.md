@@ -62,9 +62,10 @@ iteration = 1
 while True:
   if iteration == 50:
       table.hand_history_enabled = True
-      iteration = 1
+      iteration = 0
   table.reset()
   table.play_hand()
   table.hand_history_enabled = False
+  iteration += 1
   
 ```
