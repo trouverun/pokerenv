@@ -11,7 +11,7 @@ The intended use case is to run massive amounts of actor processes interacting w
 
 ## Installation
 ```shell
-pip install pokergym
+
 ```
 
 ## Example
