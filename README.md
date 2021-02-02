@@ -29,7 +29,7 @@ ExampleRandomAgent:
     def step(self, observation, valid_actions, previous_reward, episode_over):
         if previous_reward is not None:
             self.rewards.append(reward)
-        if episode over:
+        if episode_over:
             return
         self.observations.append(observation)
         actions_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
