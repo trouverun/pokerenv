@@ -157,19 +157,27 @@ class Table:
                             self._write_event("%s: calls $%.2f" % (player.name, call_size*BB))
                     elif action.action_type is PlayerAction.BET:
                         previous_bet_this_street = player.bet_this_street
-                        bet_size = player.bet(action.bet_amount)
-                        self.pot += bet_size
+                        actual_bet_size = player.bet(np.round(action.bet_amount, 2))
+                        self.pot += actual_bet_size
                         if self.bet_to_match == 0:
                             if player.all_in:
-                                self._write_event("%s: bets $%.2f and is all-in" % (player.name, bet_size*BB))
+                                self._write_event("%s: bets $%.2f and is all-in" % (player.name, actual_bet_size*BB))
                             else:
-                                self._write_event("%s: bets $%.2f" % (player.name, bet_size*BB))
+                                self._write_event("%s: bets $%.2f" % (player.name, actual_bet_size*BB))
                         else:
                             if player.all_in:
-                                self._write_event("%s: raises $%.2f to $%.2f and is all-in" % (player.name, ((bet_size+previous_bet_this_street)-self.bet_to_match)*BB, (bet_size+previous_bet_this_street)*BB))
+                                self._write_event("%s: raises $%.2f to $%.2f and is all-in" %
+                                                  (player.name,
+                                                   ((actual_bet_size+previous_bet_this_street)-self.bet_to_match)*BB,
+                                                   (actual_bet_size+previous_bet_this_street)*BB)
+                                                  )
                             else:
-                                self._write_event("%s: raises $%.2f to $%.2f" % (player.name, ((bet_size+previous_bet_this_street)-self.bet_to_match)*BB, (bet_size+previous_bet_this_street)*BB))
-                        self._change_bet_to_match(bet_size+previous_bet_this_street)
+                                self._write_event("%s: raises $%.2f to $%.2f" %
+                                                  (player.name,
+                                                   ((actual_bet_size+previous_bet_this_street)-self.bet_to_match)*BB,
+                                                   (actual_bet_size+previous_bet_this_street)*BB)
+                                                  )
+                        self._change_bet_to_match(actual_bet_size+previous_bet_this_street)
                         last_bet_placed_by = player
                     else:
                         raise Exception('Invalid action specified')

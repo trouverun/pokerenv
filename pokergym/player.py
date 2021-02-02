@@ -32,7 +32,7 @@ class Player:
             self.pending_penalty = 0
         else:
             previous_reward = None
-        return self.agent.get_action(observation, valid_actions, previous_reward, episode_over)
+        return self.agent.step(observation, valid_actions, previous_reward, episode_over)
 
     def fold(self):
         self.state = PlayerState.FOLDED
