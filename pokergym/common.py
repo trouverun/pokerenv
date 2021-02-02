@@ -1,6 +1,11 @@
 from enum import IntEnum, Enum
 
 
+def mindfuck(arg):
+    if arg:
+        return
+
+
 class GameState(IntEnum):
     PREFLOP = 0
     FLOP = 1

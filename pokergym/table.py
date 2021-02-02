@@ -135,7 +135,7 @@ class Table:
 
                     observation = self._get_observation(player)
                     valid_actions = self._get_valid_actions(player)
-                    action = player.get_action(observation, valid_actions)
+                    action = player.step(observation, valid_actions)
                     # If action is not valid, a valid action (check or fold) is automatically taken in _is_action_valid
                     if not self._is_action_valid(player, action, valid_actions):
                         player.punish_invalid_action()
@@ -291,7 +291,7 @@ class Table:
 
     def _finish_hand(self):
         for player in self.players:
-            player.send_delayed_reward()
+            player.step(None, None, True)
             if self.hand_history_enabled:
                 if player.winnings > 0:
                     player.winnings = np.round(player.winnings, 2)

@@ -26,17 +26,13 @@ class Player:
     def __gt__(self, other):
         return self.identifier > other.identifier
 
-    def get_action(self, observation, valid_actions):
+    def step(self, observation, valid_actions, episode_over=False):
         if self.has_acted:
-            self.send_delayed_reward()
+            previous_reward = self.pending_penalty + self.winnings
+            self.pending_penalty = 0
         else:
-            self.has_acted = True
-        return self.agent.get_action(observation, valid_actions)
-
-    def send_delayed_reward(self):
-        reward = self.pending_penalty + self.winnings
-        self.pending_penalty = 0
-        self.agent.receive_delayed_reward(reward)
+            previous_reward = None
+        return self.agent.get_action(observation, valid_actions, previous_reward, episode_over)
 
     def fold(self):
         self.state = PlayerState.FOLDED
