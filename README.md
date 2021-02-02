@@ -1,13 +1,18 @@
 # Pokergym
 Pokergym is a reinforcement learning environment for No Limit Texas Hold'em. 
 
-In order to make the turn based multiagent system more natural, the environment operates in the opposite way to the OpenAI gym interface. 
+In order to make the turn based multiagent system more natural, the environment operates in the opposite way when compared to the OpenAI gym interface. 
 Here the environment calls step() on an agent to get and action given observation, rather than the other way around.
 This way neither the main training loop nor the agents have to have any understanding of the game logic, e.g. whose turn it is, since that is handled internally by the environment.
 
 The results of a hand can be printed in to a hand history file, which can be analyzed with any pokerstars compatible tracking software, allowing you to easily track the learning process.
 
 The intended use case is to run massive amounts of actor processes interacting with the environment, querying a separate learner for actions, and updating the policies based on trajectories formed inside the learner, as per the SEED architecture. (https://ai.googleblog.com/2020/03/massively-scaling-reinforcement.html).
+
+## Installation
+```shell
+pip install pokergym
+```
 
 ## Example
 
@@ -24,7 +29,7 @@ ExampleRandomAgent:
     def step(self, observation, valid_actions, previous_reward, episode_over):
         if previous_reward is not None:
             self.rewards.append(reward)
-        if episode over:
+        if episode_over:
             return
         self.observations.append(observation)
         actions_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
