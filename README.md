@@ -12,6 +12,7 @@ The intended use case is to run massive amounts of actor processes interacting w
 ## Installation
 ### Requirements
 ```shell
+pip install numpy
 pip install treys
 pip install pokerenv
 ```
@@ -22,11 +23,10 @@ pip install pokerenv
 
 ```python
 from pokerenv.table import Table
-from pokerenv.common import PlayerAction, Action
+from pokerenv.common import PlayerAction, Action, BaseAgent
 
-class ExampleRandomAgent:
+class ExampleRandomAgent(BaseAgent):
     def __init__(self, identifier):
-        self.identifier = identifier
         self.actions = []
         self.observations = []
         self.rewards = []
@@ -51,7 +51,7 @@ class ExampleRandomAgent:
 ### Create an environment
 ```python
 active_players = 6
-agents = [ExampleRandomAgent('example_agent_%d' % i) for i in range(6)]
+agents = [ExampleRandomAgent() for i in range(6)]
 random_seed = 1
 low_stack_bbs = 50
 high_stack_bbs = 200
