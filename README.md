@@ -23,6 +23,9 @@ pip install treys
 ### Define an agent
 
 ```python
+from pokerenv.table import Table
+from pokerenv.common import PlayerAction, Action
+
 class ExampleRandomAgent:
     def __init__(self, identifier):
         self.identifier = identifier
@@ -32,7 +35,7 @@ class ExampleRandomAgent:
     
     def step(self, observation, valid_actions, previous_reward, episode_over):
         if previous_reward is not None:
-            self.rewards.append(reward)
+            self.rewards.append(previous_reward)
         if episode_over:
             return
         self.observations.append(observation)
