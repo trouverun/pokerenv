@@ -23,7 +23,7 @@ pip install treys
 ### Define an agent
 
 ```python
-ExampleRandomAgent:
+class ExampleRandomAgent:
     def __init__(self, identifier):
         self.identifier = identifier
         self.actions = []
