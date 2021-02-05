@@ -1,4 +1,4 @@
-from pokergym.common import PlayerState, PlayerAction
+from pokerenv.common import PlayerState, PlayerAction
 
 
 class Player:

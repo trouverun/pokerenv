@@ -1,9 +1,9 @@
 import numpy as np
 import time
 from treys import Deck, Evaluator, Card
-from pokergym.common import GameState, PlayerState, PlayerAction, TablePosition
-from pokergym.player import Player
-from pokergym.utils import pretty_print_hand
+from pokerenv.common import GameState, PlayerState, PlayerAction, TablePosition
+from pokerenv.player import Player
+from pokerenv.utils import pretty_print_hand
 
 # Just some values to make hand history work properly
 SB = 2.5
@@ -24,7 +24,7 @@ class Table:
         self.street = GameState.PREFLOP
         self.cards = []
         self.deck = Deck()
-        self.players = [Player(n+1, agents[n], agents[n].name, invalid_action_penalty) for n in range(n_players)]
+        self.players = [Player(n+1, agents[n], 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
         self.active_players = n_players
         self.evaluator = Evaluator()
         self.history = []
