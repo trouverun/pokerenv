@@ -55,7 +55,7 @@ agents = [ExampleRandomAgent('example_agent_%d' % i) for i in range(6)]
 random_seed = 1
 low_stack_bbs = 50
 high_stack_bbs = 200
-hh_location = 'hands'/
+hh_location = 'hands/'
 invalid_penalty = 0
 
 table = Table(active_play, agents, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
