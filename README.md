@@ -13,9 +13,7 @@ The intended use case is to run massive amounts of actor processes interacting w
 ### Requirements
 ```shell
 pip install treys
-```
-```shell
-
+pip install pokerenv
 ```
 
 ## Example
