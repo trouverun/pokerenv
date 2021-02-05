@@ -1,5 +1,5 @@
-# Pokergym
-Pokergym is a reinforcement learning environment for No Limit Texas Hold'em. 
+# Pokerenv
+Pokerenv is a reinforcement learning environment for No Limit Texas Hold'em. 
 
 In order to make the turn based multiagent system more natural, the environment operates in the opposite way when compared to the OpenAI gym interface. 
 Here the environment calls step() on an agent to get and action given observation, rather than the other way around.
