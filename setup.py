@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pokerenv",
-    version="0.0.5",
+    version="0.0.6",
     author="Trouverun",
     author_email="aleksi.maki-penttila@tuni.fi",
     description="A no limit hold'em environment for training RL agents.",

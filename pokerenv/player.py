@@ -26,23 +26,23 @@ class Player:
     def __gt__(self, other):
         return self.identifier > other.identifier
 
-    def step(self, observation, valid_actions, episode_over=False):
+    def get_reward(self):
         if self.has_acted:
-            previous_reward = self.pending_penalty + self.winnings
-            self.pending_penalty = 0
+            return self.pending_penalty + self.winnings
         else:
-            previous_reward = None
-            self.has_acted = True
-        return self.agent.step(observation, valid_actions, previous_reward, episode_over)
+            return None
 
     def fold(self):
+        self.has_acted = True
         self.state = PlayerState.FOLDED
         self.history.append({'action': PlayerAction.FOLD, 'value': 0})
 
     def check(self):
+        self.has_acted = True
         self.history.append({'action': PlayerAction.CHECK, 'value': 0})
 
     def call(self, amount):
+        self.has_acted = True
         amount = amount - self.bet_this_street
         if amount >= self.stack:
             call_size = self.stack
@@ -60,6 +60,7 @@ class Player:
             return amount
 
     def bet(self, amount):
+        self.has_acted = True
         if amount == self.stack:
             self.all_in = True
         amount = amount - self.bet_this_street
