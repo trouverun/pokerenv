@@ -7,13 +7,9 @@ This way neither the main training loop nor the agents need to have any understa
 
 The results of a hand can be printed in to a hand history file, which can be analyzed with any pokerstars compatible tracking software, allowing you to easily track the learning process.
 
-The intended use case is to run massive amounts of actor processes interacting with the environment, querying a separate learner for actions, and updating the policies based on trajectories formed inside the learner, as per the SEED architecture. (https://ai.googleblog.com/2020/03/massively-scaling-reinforcement.html).
-
 ## Installation
 ### Requirements
 ```shell
-pip install numpy
-pip install treys
 pip install pokerenv
 ```
 
