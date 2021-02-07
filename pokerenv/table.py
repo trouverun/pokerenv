@@ -238,14 +238,14 @@ class Table:
         return {
             'self': {
                 'position': player.position,
-                'cards': player.cards,
+                'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in player.cards],
                 'stack': player.stack,
                 'money_in_pot': player.money_in_pot,
                 'bet_this_street': player.bet_this_street,
             },
             'table': {
                 'street': int(self.street),
-                'cards': self.cards,
+                'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in self.cards],
                 'pot': self.pot,
                 'bet_to_match': self.bet_to_match,
                 'minimum_raise': self.minimum_raise,
