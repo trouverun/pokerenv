@@ -5,9 +5,9 @@ In order to make the turn based multiagent system more natural, the environment 
 Here the environment calls step() on an agent to get and action given observation, rather than the other way around.
 This way neither the main training loop nor the agents need to have any understanding of the game logic, e.g. whose turn it is, since that is handled internally by the environment.
 
-In the openai-compliant branch there is also an openAI gym compliant version, which uses the standard gym interface.
-
 The results of a hand can be printed in to a hand history file, which can be analyzed with any pokerstars compatible tracking software, allowing you to easily track the learning process.
+
+**In the openai-compliant branch there is also an openAI gym compliant version, which uses the standard gym interface.**
 
 ## Installation
 ```shell
