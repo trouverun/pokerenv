@@ -23,7 +23,8 @@ class ExampleRandomAgent():
 
     def get_action(self, observation, self_index):
         self.observations.append(observation)
-        action_list, bet_range = observation['info']['valid_actions']['actions_list'], observation['info']['valid_actions']['bet_range']
+        action_list = observation['info']['valid_actions']['actions_list']
+        bet_range = observation['info']['valid_actions']['bet_range']
         chosen = PlayerAction(np.random.choice(action_list))
         betsize = 0
         if chosen is PlayerAction.BET:
