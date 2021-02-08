@@ -1,6 +1,4 @@
 # Pokerenv
-Pokerenv is a reinforcement learning environment for No Limit Texas Hold'em. 
-
 This version implements the openAI gym interface.
 
 ## Installation
@@ -66,5 +64,6 @@ while True:
             break
         next_acting_player = obs['info']['next_player_to_act']
     iteration += 1
+    table.hand_history_enabled = False
   
 ```
