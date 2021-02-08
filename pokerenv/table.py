@@ -277,10 +277,12 @@ class Table:
             if not bet_range[0] < action.bet_amount < bet_range[1]:
                 player.fold()
                 self.active_players -= 1
+                self._write_event("%s: folds" % player.name)
                 return False
             if action.bet_amount > player.stack:
                 player.fold()
                 self.active_players -= 1
+                self._write_event("%s: folds" % player.name)
                 return False
         return True
 
