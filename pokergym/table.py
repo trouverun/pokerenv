@@ -12,7 +12,8 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5):
+    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5, obs_format='dict'):
+        self.obs_format = obs_format
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
         self.stack_low = stack_low
@@ -266,40 +267,76 @@ class Table(gym.Env):
         self.bet_to_match = new_amount
 
     def _get_observation(self, player):
-        keys = ['position', 'state', 'stack', 'money_in_pot', 'bet_this_street', 'all_in']
-        values = [
-            [other.position, other.state, other.stack, other.money_in_pot, other.bet_this_street, other.all_in]
-            for other in self.players if other is not player
-        ]
-        return {
-            'info': {
-                'next_player_to_act': self.acting_player_i,
-                'hand_is_over': self.hand_is_over,
-                'valid_actions': self._get_valid_actions(player)
-            },
-            'self': {
-                'position': player.position,
-                'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in player.cards],
-                'stack': player.stack,
-                'money_in_pot': player.money_in_pot,
-                'bet_this_street': player.bet_this_street,
-            },
-            'table': {
-                'street': int(self.street),
-                'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in self.cards],
-                'pot': self.pot,
-                'bet_to_match': self.bet_to_match,
-                'minimum_raise': self.minimum_raise,
-            },
-            'others': [
-                {
-                    key: val
-                    for key, val in zip(keys, value)
-                }
-                for value in values
+        if self.obs_format == 'dict':
+            keys = ['position', 'state', 'stack', 'money_in_pot', 'bet_this_street', 'all_in']
+            values = [
+                [other.position, other.state, other.stack, other.money_in_pot, other.bet_this_street, other.all_in]
+                for other in self.players if other is not player
             ]
+            return {
+                'info': {
+                    'next_player_to_act': self.acting_player_i,
+                    'hand_is_over': self.hand_is_over,
+                    'valid_actions': self._get_valid_actions(player)
+                },
+                'self': {
+                    'position': player.position,
+                    'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in player.cards],
+                    'stack': player.stack,
+                    'money_in_pot': player.money_in_pot,
+                    'bet_this_street': player.bet_this_street,
+                },
+                'table': {
+                    'street': int(self.street),
+                    'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in self.cards],
+                    'pot': self.pot,
+                    'bet_to_match': self.bet_to_match,
+                    'minimum_raise': self.minimum_raise,
+                },
+                'others': [
+                    {
+                        key: val
+                        for key, val in zip(keys, value)
+                    }
+                    for value in values
+                ]
 
-        }
+            }
+        elif self.obs_format == 'array':
+            observation = np.zeros(70)
+            valid_actions = self._get_valid_actions(player)
+            for action in valid_actions['actions_list']:
+                observation[action.value] = 1
+            observation[4] = valid_actions['bet_range'][0]
+            observation[5] = valid_actions['bet_range'][1]
+
+            observation[6] = player.position
+            observation[7] = Card.get_suit_int(player.cards[0])
+            observation[8] = Card.get_rank_int(player.cards[0])
+            observation[9] = Card.get_suit_int(player.cards[1])
+            observation[10] = Card.get_rank_int(player.cards[1])
+            observation[11] = player.stack
+            observation[12] = player.money_in_pot
+            observation[13] = player.bet_this_street
+
+            observation[14] = self.street
+            for i in range(len(self.cards)):
+                observation[15 + (i * 2)] = Card.get_suit_int(self.cards[i])
+                observation[16 + (i * 2)] = Card.get_rank_int(self.cards[i])
+            observation[26] = self.pot
+            observation[27] = self.minimum_raise
+
+            others = [other for other in self.players if other is not player]
+            for i in range(len(others)):
+                observation[28 + i * 6] = others[i].position
+                observation[29 + i * 6] = others[i].state.value
+                observation[30 + i * 6] = others[i].stack
+                observation[31 + i * 6] = others[i].money_in_pot
+                observation[32 + i * 6] = others[i].bet_this_street
+                observation[33 + i * 6] = int(others[i].all_in)
+            return observation
+        else:
+            raise Exception("Invalid observation format: %s" % self.obs_format)
 
     def _is_action_valid(self, player, action, valid_actions):
         action_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
