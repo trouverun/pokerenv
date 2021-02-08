@@ -26,6 +26,6 @@ class TablePosition(IntEnum):
 
 
 class Action:
-    def __init__(self, action_type, bet_amount, player_i):
+    def __init__(self, action_type, bet_amount):
         self.action_type = action_type
         self.bet_amount = bet_amount
