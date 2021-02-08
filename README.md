@@ -2,9 +2,8 @@
 This version implements the openAI gym interface.
 
 ## Installation
-### Requirements
 ```shell
-pip install pokergym
+pip install https://github.com/trouverun/pokerenv/archive/openai-compliant.zip
 ```
 
 ## Example
@@ -16,7 +15,7 @@ from pokergym.table import Table
 from pokergym.common import PlayerAction, Action
 
 
-class ExampleRandomAgent(BaseAgent):
+class ExampleRandomAgent():
     def __init__(self, identifier):
         self.actions = []
         self.observations = []
@@ -24,7 +23,8 @@ class ExampleRandomAgent(BaseAgent):
 
     def get_action(self, observation, self_index):
         self.observations.append(observation)
-        action_list, bet_range = observation['info']['valid_actions']['actions_list'], observation['info']['valid_actions']['bet_range']
+        action_list = observation['info']['valid_actions']['actions_list']
+        bet_range = observation['info']['valid_actions']['bet_range']
         chosen = PlayerAction(np.random.choice(action_list))
         betsize = 0
         if chosen is PlayerAction.BET:
@@ -59,7 +59,8 @@ while True:
     obs = table.reset()
     next_acting_player = obs['info']['next_player_to_act']
     while True:
-        obs, reward, finished = table.step(agents[acting_player].get_action(obs, next_acting_player))
+        action = agents[acting_player].get_action(obs, next_acting_player)
+        obs, reward, finished = table.step(action)
         if finished:
             break
         next_acting_player = obs['info']['next_player_to_act']
