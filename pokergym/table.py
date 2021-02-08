@@ -2,9 +2,9 @@ import numpy as np
 import time
 import gym
 from treys import Deck, Evaluator, Card
-from pokerenv.common import GameState, PlayerState, PlayerAction, TablePosition, Action
-from pokerenv.player import Player
-from pokerenv.utils import pretty_print_hand
+from pokergym.common import GameState, PlayerState, PlayerAction, TablePosition, Action
+from pokergym.player import Player
+from pokergym.utils import pretty_print_hand
 
 # Just some values to make hand history work properly
 SB = 2.5

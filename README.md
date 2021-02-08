@@ -10,7 +10,7 @@ The results of a hand can be printed in to a hand history file, which can be ana
 ## Installation
 ### Requirements
 ```shell
-pip install pokerenv
+pip install pokergym
 ```
 
 ## Example
@@ -18,15 +18,16 @@ pip install pokerenv
 ### Define an agent
 
 ```python
-from pokerenv.table import Table
-from pokerenv.common import PlayerAction, Action, BaseAgent
+from pokergym.table import Table
+from pokergym.common import PlayerAction, Action, BaseAgent
+
 
 class ExampleRandomAgent(BaseAgent):
     def __init__(self, identifier):
         self.actions = []
         self.observations = []
         self.rewards = []
-    
+
     def step(self, observation, valid_actions, previous_reward, episode_over):
         if previous_reward is not None:
             self.rewards.append(previous_reward)
