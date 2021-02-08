@@ -13,6 +13,9 @@ BB = 5
 
 class Table(gym.Env):
     def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5, obs_format='dict'):
+        self.action_space = None
+        self.observation_space = gym.spaces.Box()
+
         self.obs_format = obs_format
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
@@ -29,6 +32,7 @@ class Table(gym.Env):
         self.players = [Player(n+1, 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
         self.active_players = n_players
         self.acting_player_i = min(self.n_players-1, 2)
+        self.current_player_i = self.acting_player_i
         self.evaluator = Evaluator()
         self.history = []
         self.street_finished = False
@@ -48,6 +52,7 @@ class Table(gym.Env):
         self.rng.shuffle(self.deck.cards)
         self.active_players = self.n_players
         self.acting_player_i = min(self.n_players-1, 2)
+        self.current_player_i = self.acting_player_i
         self.first_to_act = None
         initial_draw = self.deck.draw(self.n_players * 2)
         self.street_finished = False
@@ -76,12 +81,9 @@ class Table(gym.Env):
         return self._get_observation(self.players[self.acting_player_i])
 
     def step(self, action: Action):
-        player_i = action.player_i
-        assert 0 <= player_i < self.n_players
-        player = self.players[player_i]
+        self.current_player_i = self.acting_player_i
+        player = self.players[self.current_player_i]
 
-        if player_i != self.acting_player_i:
-            raise Exception("A player tried to take an action when its not supposed to")
         if (player.all_in or player.state is not PlayerState.ACTIVE) and not self.hand_is_over:
             raise Exception("A player who is inactive or all-in tried to take an action")
 
@@ -161,15 +163,15 @@ class Table(gym.Env):
                 if should_do_street_transition:
                     self._street_transition(transition_to_end=True)
             else:
-                active_players_after = [i for i in range(self.n_players) if i > player_i if
+                active_players_after = [i for i in range(self.n_players) if i > self.current_player_i if
                                         self.players[i].state is PlayerState.ACTIVE if not self.players[i].all_in]
-                active_players_before = [i for i in range(self.n_players) if i <= player_i if
+                active_players_before = [i for i in range(self.n_players) if i <= self.current_player_i if
                                          self.players[i].state is PlayerState.ACTIVE if not self.players[i].all_in]
                 if len(active_players_after) > 0:
                     self.acting_player_i = min(active_players_after)
                 else:
                     self.acting_player_i = min(active_players_before)
-                if self.last_bet_placed_by is self.players[self.acting_player_i]:
+                if self.last_bet_placed_by is self.players[self.current_player_i]:
                     self.street_finished = True
 
         if self.street_finished and not self.hand_is_over:
@@ -180,8 +182,8 @@ class Table(gym.Env):
                 self._distribute_pot()
                 self._finish_hand()
             self.final_rewards_collected += 1
-            active_players_after = [i for i in range(self.n_players) if i > player_i]
-            active_players_before = [i for i in range(self.n_players) if i <= player_i]
+            active_players_after = [i for i in range(self.n_players) if i > self.current_player_i]
+            active_players_before = [i for i in range(self.n_players) if i <= self.current_player_i]
             if len(active_players_after) > 0:
                 self.acting_player_i = min(active_players_after)
             else:

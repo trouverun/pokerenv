@@ -29,4 +29,3 @@ class Action:
     def __init__(self, action_type, bet_amount, player_i):
         self.action_type = action_type
         self.bet_amount = bet_amount
-        self.player_i = player_i
