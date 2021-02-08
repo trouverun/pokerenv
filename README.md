@@ -1,6 +1,4 @@
 # Pokerenv
-Pokerenv is a reinforcement learning environment for No Limit Texas Hold'em. 
-
 This version implements the openAI gym interface.
 
 ## Installation
