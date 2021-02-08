@@ -2,7 +2,7 @@ import numpy as np
 import time
 import gym
 from treys import Deck, Evaluator, Card
-from pokerenv.common import GameState, PlayerState, PlayerAction, TablePosition
+from pokerenv.common import GameState, PlayerState, PlayerAction, TablePosition, Action
 from pokerenv.player import Player
 from pokerenv.utils import pretty_print_hand
 
@@ -12,7 +12,7 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, agents, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5):
+    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5):
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
         self.stack_low = stack_low
@@ -25,15 +25,16 @@ class Table(gym.Env):
         self.street = GameState.PREFLOP
         self.cards = []
         self.deck = Deck()
-        self.players = [Player(n+1, agents[n], 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
+        self.players = [Player(n+1, 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
         self.active_players = n_players
-        self.acting_player_i = TablePosition.UTG
+        self.acting_player_i = min(self.n_players-1, 2)
         self.evaluator = Evaluator()
         self.history = []
         self.street_finished = False
         self.hand_is_over = False
         self.last_bet_placed_by = None
-        self.final_rewards_collected = 0
+        self.first_to_act = None
+        self.final_rewards_collected = 1
 
     def seed(self, seed=None):
         self.rng = np.random.default_rng(seed)
@@ -44,15 +45,22 @@ class Table(gym.Env):
         self.cards = []
         self.deck.cards = Deck.GetFullDeck()
         self.rng.shuffle(self.deck.cards)
-        self.rng.shuffle(self.players)
         self.active_players = self.n_players
-        self.acting_player_i = TablePosition.UTG
+        self.acting_player_i = min(self.n_players-1, 2)
+        self.first_to_act = None
         initial_draw = self.deck.draw(self.n_players * 2)
+        self.street_finished = False
+        self.hand_is_over = False
+        self.final_rewards_collected = 1
         for i, player in enumerate(self.players):
             player.reset()
             player.position = i
             player.cards = [initial_draw[i], initial_draw[i+self.n_players]]
             player.stack = self.rng.integers(self.stack_low, self.stack_high, 1)[0]
+        self.history = []
+        if self.hand_history_enabled:
+            self._history_initialize()
+        for i, player in enumerate(self.players):
             if player.position == TablePosition.SB:
                 self.pot += player.bet(0.5)
                 self._change_bet_to_match(0.5)
@@ -60,54 +68,29 @@ class Table(gym.Env):
             elif player.position == TablePosition.BB:
                 self.pot += player.bet(1)
                 self._change_bet_to_match(1)
+                self.last_bet_placed_by = player
                 self._write_event("%s: posts big blind $%.2f" % (player.name, BB))
-        self.bet_to_match = 0
-        self.history = []
         if self.hand_history_enabled:
-            self._history_initialize()
             self._write_hole_cards()
-        self.street_finished = False
-        self.hand_is_over = False
-        self.last_bet_placed_by = None
-        self.final_rewards_collected = 0
+        return self._get_observation(self.players[self.acting_player_i])
 
-    def step(self, action: PlayerAction):
+    def step(self, action: Action):
         player_i = action.player_i
         assert 0 <= player_i < self.n_players
         player = self.players[player_i]
 
         if player_i != self.acting_player_i:
             raise Exception("A player tried to take an action when its not supposed to")
-        if player.all_in or player.state is not PlayerState.ACTIVE:
+        if (player.all_in or player.state is not PlayerState.ACTIVE) and not self.hand_is_over:
             raise Exception("A player who is inactive or all-in tried to take an action")
 
-        if not (self.street_finished and self.street == GameState.RIVER) or self.hand_is_over:
-            players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
-            if len(players_with_actions) < 2:
-                amount = 0
-                # Everone else is all in or folded
-                if self.active_players > 1:
-                    self.street_finished = True
-                    biggest_bet_call = max(
-                        [p.bet_this_street for p in self.players if p.state is PlayerState.ACTIVE if p is not player])
-                    if biggest_bet_call < player.bet_this_street:
-                        amount = player.bet_this_street - biggest_bet_call
-                # Everone else has folded
-                else:
-                    self.hand_is_over = True
-                    amount = self.minimum_raise
-                if amount > 0:
-                    self.pot -= amount
-                    player.stack += amount
-                    player.money_in_pot -= amount
-                    player.bet_this_street -= amount
-                    self._write_event(
-                        "Uncalled bet ($%.2f) returned to %s" % (amount * BB, player.name)
-                    )
-            if self.last_bet_placed_by is player:
+        if self.first_to_act is None:
+            self.first_to_act = player
+        else:
+            if self.first_to_act is player and self.last_bet_placed_by is None:
                 self.street_finished = True
 
-        if not self.street_finished or self.hand_is_over:
+        if not (self.hand_is_over or self.street_finished):
             valid_actions = self._get_valid_actions(player)
             if not self._is_action_valid(player, action, valid_actions):
                 player.punish_invalid_action()
@@ -151,57 +134,98 @@ class Table(gym.Env):
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
 
+            should_do_street_transition = False
+            players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
+            if len(players_with_actions) < 2:
+                amount = 0
+                # Everone else is all-in or folded
+                if self.active_players > 1:
+                    biggest_bet_call = max(
+                        [p.bet_this_street for p in self.players if p.state is PlayerState.ACTIVE if p is not self.last_bet_placed_by])
+                    if biggest_bet_call < self.last_bet_placed_by.bet_this_street:
+                        amount = self.last_bet_placed_by.bet_this_street - biggest_bet_call
+                    should_do_street_transition = True
+                # Everone else has folded
+                else:
+                    self.hand_is_over = True
+                    amount = self.minimum_raise
+                if amount > 0:
+                    self.pot -= amount
+                    self.last_bet_placed_by.stack += amount
+                    self.last_bet_placed_by.money_in_pot -= amount
+                    self.last_bet_placed_by.bet_this_street -= amount
+                    self._write_event(
+                        "Uncalled bet ($%.2f) returned to %s" % (amount * BB, self.last_bet_placed_by.name)
+                    )
+                if should_do_street_transition:
+                    self._street_transition(transition_to_end=True)
+            else:
+                active_players_after = [i for i in range(self.n_players) if i > player_i if
+                                        self.players[i].state is PlayerState.ACTIVE if not self.players[i].all_in]
+                active_players_before = [i for i in range(self.n_players) if i <= player_i if
+                                         self.players[i].state is PlayerState.ACTIVE if not self.players[i].all_in]
+                if len(active_players_after) > 0:
+                    self.acting_player_i = min(active_players_after)
+                else:
+                    self.acting_player_i = min(active_players_before)
+                if self.last_bet_placed_by is self.players[self.acting_player_i]:
+                    self.street_finished = True
+
         if self.street_finished and not self.hand_is_over:
-            if self.street == GameState.PREFLOP:
-                self.cards = self.deck.draw(3)
-                self._write_event("*** FLOP *** [%s %s %s]" %
-                                  (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
-                                   Card.int_to_str(self.cards[2])))
-                self.street = GameState.FLOP
-            elif self.street == GameState.FLOP:
-                new = self.deck.draw(1)
-                self.cards.append(new)
-                self._write_event("*** TURN *** [%s %s %s] [%s]" %
-                                  (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
-                                   Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3])))
-                self.street = GameState.TURN
-            elif self.street == GameState.TURN:
-                new = self.deck.draw(1)
-                self.cards.append(new)
-                self._write_event("*** RIVER *** [%s %s %s %s] [%s]" %
-                                  (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
-                                   Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3]),
-                                   Card.int_to_str(self.cards[4])))
-                self.street = GameState.RIVER
-            elif self.street == GameState.RIVER:
-                if not self.hand_is_over:
-                    if self.hand_history_enabled:
-                        self._write_show_down()
+            self._street_transition()
+
+        if self.hand_is_over:
+            if self.final_rewards_collected == 1:
                 self._distribute_pot()
                 self._finish_hand()
-            for player in self.players:
-                player.finish_street()
-            self.street_finished = False
-            self.last_bet_placed_by = None
-            self.bet_to_match = 0
-            self.minimum_raise = 0
-        if self.hand_is_over:
-            self._distribute_pot()
-            self._finish_hand()
+            self.final_rewards_collected += 1
+            active_players_after = [i for i in range(self.n_players) if i > player_i]
+            active_players_before = [i for i in range(self.n_players) if i <= player_i]
+            if len(active_players_after) > 0:
+                self.acting_player_i = min(active_players_after)
+            else:
+                self.acting_player_i = min(active_players_before)
 
-        # Choose the next player to act
-        if not self.hand_is_over:
-            active_players_after = [i for i in range(len(self.n_players)) if i > player_i if self.players[i].state is PlayerState.ACTIVE]
-            active_players_before = [i for i in range(len(self.n_players)) if i < player_i if self.players[i].state is PlayerState.ACTIVE]
-        else:
-            active_players_after = [i for i in range(len(self.n_players)) if i > player_i]
-            active_players_before = [i for i in range(len(self.n_players)) if i < player_i]
-        if len(active_players_after) > 0:
-            self.acting_player_i = min(active_players_after)
-        else:
-            self.acting_player_i = min(active_players_before)
+        return self._get_observation(self.players[self.acting_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players)
 
-        return self._get_observation(player), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players)
+    def _street_transition(self, transition_to_end=False):
+        transitioned = False
+        if self.street == GameState.PREFLOP:
+            self.cards = self.deck.draw(3)
+            self._write_event("*** FLOP *** [%s %s %s]" %
+                              (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
+                               Card.int_to_str(self.cards[2])))
+            self.street = GameState.FLOP
+            transitioned = True
+        if self.street == GameState.FLOP and (not transitioned or transition_to_end):
+            new = self.deck.draw(1)
+            self.cards.append(new)
+            self._write_event("*** TURN *** [%s %s %s] [%s]" %
+                              (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
+                               Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3])))
+            self.street = GameState.TURN
+            transitioned = True
+        if self.street == GameState.TURN and (not transitioned or transition_to_end):
+            new = self.deck.draw(1)
+            self.cards.append(new)
+            self._write_event("*** RIVER *** [%s %s %s %s] [%s]" %
+                              (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
+                               Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3]),
+                               Card.int_to_str(self.cards[4])))
+            self.street = GameState.RIVER
+            transitioned = True
+        if self.street == GameState.RIVER and (not transitioned or transition_to_end):
+            if not self.hand_is_over:
+                if self.hand_history_enabled:
+                    self._write_show_down()
+            self.hand_is_over = True
+        self.street_finished = False
+        self.last_bet_placed_by = None
+        self.first_to_act = None
+        self.bet_to_match = 0
+        self.minimum_raise = 0
+        for player in self.players:
+            player.finish_street()
 
     def _history_initialize(self):
         t = time.localtime()
@@ -249,7 +273,9 @@ class Table(gym.Env):
         ]
         return {
             'info': {
-                'next_player_to_act': self.acting_player_i
+                'next_player_to_act': self.acting_player_i,
+                'hand_is_over': self.hand_is_over,
+                'valid_actions': self._get_valid_actions(player)
             },
             'self': {
                 'position': player.position,

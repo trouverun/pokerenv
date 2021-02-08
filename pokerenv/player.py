@@ -2,8 +2,7 @@ from pokerenv.common import PlayerState, PlayerAction
 
 
 class Player:
-    def __init__(self, identifier, agent, name, penalty):
-        self.agent = agent
+    def __init__(self, identifier, name, penalty):
         self.state = PlayerState.ACTIVE
         self.has_acted = False
         self.identifier = identifier
