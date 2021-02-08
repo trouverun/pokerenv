@@ -59,7 +59,8 @@ while True:
     obs = table.reset()
     next_acting_player = obs['info']['next_player_to_act']
     while True:
-        obs, reward, finished = table.step(agents[acting_player].get_action(obs, next_acting_player))
+        action = agents[acting_player].get_action(obs, next_acting_player)
+        obs, reward, finished = table.step(action)
         if finished:
             break
         next_acting_player = obs['info']['next_player_to_act']
