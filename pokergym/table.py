@@ -13,9 +13,6 @@ BB = 5
 
 class Table(gym.Env):
     def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5, obs_format='dict'):
-        self.action_space = None
-        self.observation_space = gym.spaces.Box()
-
         self.obs_format = obs_format
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
