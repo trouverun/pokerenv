@@ -30,8 +30,3 @@ class Action:
         self.action_type = action_type
         self.bet_amount = bet_amount
         self.player_i = player_i
-
-
-class BaseAgent:
-    def step(self, observation, valid_actions, previous_reward, episode_over):
-       pass
