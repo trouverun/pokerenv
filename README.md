@@ -1,11 +1,7 @@
 # Pokerenv
 Pokerenv is a reinforcement learning environment for No Limit Texas Hold'em. 
 
-In order to make the turn based multiagent system more natural, the environment operates in the opposite way when compared to the OpenAI gym interface. 
-Here the environment calls step() on an agent to get and action given observation, rather than the other way around.
-This way neither the main training loop nor the agents need to have any understanding of the game logic, e.g. whose turn it is, since that is handled internally by the environment.
-
-The results of a hand can be printed in to a hand history file, which can be analyzed with any pokerstars compatible tracking software, allowing you to easily track the learning process.
+This version implements the openAI gym interface.
 
 ## Installation
 ### Requirements
@@ -19,7 +15,7 @@ pip install pokergym
 
 ```python
 from pokergym.table import Table
-from pokergym.common import PlayerAction, Action, BaseAgent
+from pokergym.common import PlayerAction, Action
 
 
 class ExampleRandomAgent(BaseAgent):
@@ -28,46 +24,47 @@ class ExampleRandomAgent(BaseAgent):
         self.observations = []
         self.rewards = []
 
-    def step(self, observation, valid_actions, previous_reward, episode_over):
-        if previous_reward is not None:
-            self.rewards.append(previous_reward)
-        if episode_over:
-            return
+    def get_action(self, observation, self_index):
         self.observations.append(observation)
-        actions_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
-        chosen = PlayerAction(random.choice(actions_list))
+        action_list, bet_range = observation['info']['valid_actions']['actions_list'], observation['info']['valid_actions']['bet_range']
+        chosen = PlayerAction(np.random.choice(action_list))
         betsize = 0
         if chosen is PlayerAction.BET:
-            betsize = random.uniform(bet_range[0], bet_range[1])
-        action = Action(chosen, betsize)
+            betsize = np.random.uniform(bet_range[0], bet_range[1])
+        action = Action(chosen, betsize, self_index)
         self.actions.append(action)
         return action
+
 ```
 
 
 ### Create an environment
 ```python
 active_players = 6
-agents = [ExampleRandomAgent() for i in range(6)]
+agents = [RandomAgent() for i in range(6)]
 random_seed = 1
 low_stack_bbs = 50
 high_stack_bbs = 200
 hh_location = 'hands/'
-invalid_penalty = 0
+invalid_penalty = -15
 
-table = Table(active_players, agents, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
+table = Table(active_players, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
 ```
 
 ### Implement learning loop
 ```python
 iteration = 1
 while True:
-  if iteration == 50:
-      table.hand_history_enabled = True
-      iteration = 0
-  table.reset()
-  table.play_hand()
-  table.hand_history_enabled = False
-  iteration += 1
+    if iteration == 50:
+        table.hand_history_enabled = True
+        iteration = 0
+    obs = table.reset()
+    next_acting_player = obs['info']['next_player_to_act']
+    while True:
+        obs, reward, finished = table.step(agents[acting_player].get_action(obs, next_acting_player))
+        if finished:
+            break
+        next_acting_player = obs['info']['next_player_to_act']
+    iteration += 1
   
 ```
