@@ -2,7 +2,6 @@
 This version implements the openAI gym interface.
 
 ## Installation
-### Requirements
 ```shell
 pip install https://github.com/trouverun/pokerenv/archive/openai-compliant.zip
 ```
