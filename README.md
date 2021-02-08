@@ -15,7 +15,7 @@ from pokergym.table import Table
 from pokergym.common import PlayerAction, Action
 
 
-class ExampleRandomAgent(BaseAgent):
+class ExampleRandomAgent():
     def __init__(self, identifier):
         self.actions = []
         self.observations = []
