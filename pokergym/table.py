@@ -34,6 +34,7 @@ class Table(gym.Env):
         self.history = []
         self.street_finished = False
         self.hand_is_over = False
+        self.hand_ended_last_turn = False
         self.last_bet_placed_by = None
         self.first_to_act = None
         self.final_rewards_collected = 0
@@ -54,6 +55,7 @@ class Table(gym.Env):
         initial_draw = self.deck.draw(self.n_players * 2)
         self.street_finished = False
         self.hand_is_over = False
+        self.hand_ended_last_turn = False
         self.final_rewards_collected = 0
         for i, player in enumerate(self.players):
             player.reset()
@@ -83,6 +85,9 @@ class Table(gym.Env):
 
         if (player.all_in or player.state is not PlayerState.ACTIVE) and not self.hand_is_over:
             raise Exception("A player who is inactive or all-in tried to take an action")
+
+        if self.hand_is_over:
+            self.hand_ended_last_turn = True
 
         if self.first_to_act is None:
             self.first_to_act = player
@@ -275,7 +280,7 @@ class Table(gym.Env):
             return {
                 'info': {
                     'next_player_to_act': self.acting_player_i,
-                    'hand_is_over': self.final_rewards_collected > 1,
+                    'hand_is_over': self.hand_ended_last_turn,
                     'valid_actions': self._get_valid_actions(player)
                 },
                 'self': {
@@ -304,7 +309,7 @@ class Table(gym.Env):
         elif self.obs_format == 'array':
             observation = np.zeros(72)
             observation[0] = self.acting_player_i
-            observation[1] = int(self.final_rewards_collected > 1)
+            observation[1] = int(self.hand_ended_last_turn)
 
             valid_actions = self._get_valid_actions(player)
             for action in valid_actions['actions_list']:
