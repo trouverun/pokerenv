@@ -36,7 +36,7 @@ class Table(gym.Env):
         self.hand_is_over = False
         self.last_bet_placed_by = None
         self.first_to_act = None
-        self.final_rewards_collected = 1
+        self.final_rewards_collected = 0
 
     def seed(self, seed=None):
         self.rng = np.random.default_rng(seed)
@@ -54,7 +54,7 @@ class Table(gym.Env):
         initial_draw = self.deck.draw(self.n_players * 2)
         self.street_finished = False
         self.hand_is_over = False
-        self.final_rewards_collected = 1
+        self.final_rewards_collected = 0
         for i, player in enumerate(self.players):
             player.reset()
             player.position = i
@@ -175,7 +175,7 @@ class Table(gym.Env):
             self._street_transition()
 
         if self.hand_is_over:
-            if self.final_rewards_collected == 1:
+            if self.final_rewards_collected == 0:
                 self._distribute_pot()
                 self._finish_hand()
             self.final_rewards_collected += 1
@@ -186,7 +186,7 @@ class Table(gym.Env):
             else:
                 self.acting_player_i = min(active_players_before)
 
-        return self._get_observation(self.players[self.acting_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players)
+        return self._get_observation(self.players[self.acting_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players-1)
 
     def _street_transition(self, transition_to_end=False):
         transitioned = False
@@ -275,7 +275,7 @@ class Table(gym.Env):
             return {
                 'info': {
                     'next_player_to_act': self.acting_player_i,
-                    'hand_is_over': self.hand_is_over,
+                    'hand_is_over': self.final_rewards_collected > 1,
                     'valid_actions': self._get_valid_actions(player)
                 },
                 'self': {
@@ -304,7 +304,7 @@ class Table(gym.Env):
         elif self.obs_format == 'array':
             observation = np.zeros(72)
             observation[0] = self.acting_player_i
-            observation[1] = int(self.hand_is_over)
+            observation[1] = int(self.final_rewards_collected > 1)
 
             valid_actions = self._get_valid_actions(player)
             for action in valid_actions['actions_list']:
