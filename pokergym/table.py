@@ -97,8 +97,10 @@ class Table(gym.Env):
 
         if not (self.hand_is_over or self.street_finished):
             valid_actions = self._get_valid_actions(player)
+            print(action)
             if not self._is_action_valid(player, action, valid_actions):
                 player.punish_invalid_action()
+                print("PUNISHED")
 
             if action.action_type is PlayerAction.FOLD:
                 player.fold()
