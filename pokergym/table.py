@@ -308,7 +308,7 @@ class Table(gym.Env):
 
             }
         elif self.obs_format == 'array':
-            observation = np.zeros(72)
+            observation = np.zeros(63)
             observation[0] = self.acting_player_i
             observation[1] = int(not self.hand_is_over)
             observation[2] = int(self.hand_ended_last_turn)
