@@ -114,7 +114,6 @@ class Table(gym.Env):
                 else:
                     self._write_event("%s: calls $%.2f" % (player.name, call_size * BB))
             elif action.action_type is PlayerAction.BET:
-                print("BET")
                 previous_bet_this_street = player.bet_this_street
                 actual_bet_size = player.bet(np.round(action.bet_amount, 2))
                 self.pot += actual_bet_size
@@ -139,6 +138,7 @@ class Table(gym.Env):
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
             else:
+                print(action.action_type)
                 raise Exception("Invalid action")
 
             should_do_street_transition = False
