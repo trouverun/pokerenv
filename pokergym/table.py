@@ -138,10 +138,6 @@ class Table(gym.Env):
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
             else:
-                print(action.action_type)
-                print("bet",action.action_type == PlayerAction.BET)
-                print("call",action.action_type == PlayerAction.CALL)
-                print("fold",action.action_type == PlayerAction.FOLD)
                 raise Exception("Invalid action")
 
             should_do_street_transition = False
