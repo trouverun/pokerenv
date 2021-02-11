@@ -139,6 +139,9 @@ class Table(gym.Env):
                 self.last_bet_placed_by = player
             else:
                 print(action.action_type)
+                print("bet",action.action_type == PlayerAction.BET)
+                print("call",action.action_type == PlayerAction.CALL)
+                print("fold",action.action_type == PlayerAction.FOLD)
                 raise Exception("Invalid action")
 
             should_do_street_transition = False
