@@ -281,6 +281,7 @@ class Table(gym.Env):
                 'info': {
                     'next_player_to_act': self.acting_player_i,
                     'hand_is_over': self.hand_ended_last_turn,
+                    'should_save_obseravtion': not self.hand_is_over,
                     'valid_actions': self._get_valid_actions(player)
                 },
                 'self': {
@@ -309,38 +310,39 @@ class Table(gym.Env):
         elif self.obs_format == 'array':
             observation = np.zeros(72)
             observation[0] = self.acting_player_i
-            observation[1] = int(self.hand_ended_last_turn)
+            observation[1] = int(not self.hand_is_over)
+            observation[2] = int(self.hand_ended_last_turn)
 
             valid_actions = self._get_valid_actions(player)
             for action in valid_actions['actions_list']:
-                observation[action.value+2] = 1
-            observation[6] = valid_actions['bet_range'][0]
-            observation[7] = valid_actions['bet_range'][1]
+                observation[action.value+3] = 1
+            observation[7] = valid_actions['bet_range'][0]
+            observation[8] = valid_actions['bet_range'][1]
 
-            observation[8] = player.position
-            observation[9] = Card.get_suit_int(player.cards[0])
-            observation[10] = Card.get_rank_int(player.cards[0])
-            observation[11] = Card.get_suit_int(player.cards[1])
-            observation[12] = Card.get_rank_int(player.cards[1])
-            observation[13] = player.stack
-            observation[14] = player.money_in_pot
-            observation[15] = player.bet_this_street
+            observation[9] = player.position
+            observation[10] = Card.get_suit_int(player.cards[0])
+            observation[11] = Card.get_rank_int(player.cards[0])
+            observation[12] = Card.get_suit_int(player.cards[1])
+            observation[13] = Card.get_rank_int(player.cards[1])
+            observation[14] = player.stack
+            observation[15] = player.money_in_pot
+            observation[16] = player.bet_this_street
 
-            observation[16] = self.street
+            observation[17] = self.street
             for i in range(len(self.cards)):
-                observation[17 + (i * 2)] = Card.get_suit_int(self.cards[i])
-                observation[18 + (i * 2)] = Card.get_rank_int(self.cards[i])
-            observation[19] = self.pot
-            observation[20] = self.minimum_raise
+                observation[18 + (i * 2)] = Card.get_suit_int(self.cards[i])
+                observation[19 + (i * 2)] = Card.get_rank_int(self.cards[i])
+            observation[20] = self.pot
+            observation[21] = self.minimum_raise
 
             others = [other for other in self.players if other is not player]
             for i in range(len(others)):
-                observation[21 + i * 6] = others[i].position
-                observation[22 + i * 6] = others[i].state.value
-                observation[23 + i * 6] = others[i].stack
-                observation[24 + i * 6] = others[i].money_in_pot
-                observation[25 + i * 6] = others[i].bet_this_street
-                observation[26 + i * 6] = int(others[i].all_in)
+                observation[22 + i * 6] = others[i].position
+                observation[23 + i * 6] = others[i].state.value
+                observation[24 + i * 6] = others[i].stack
+                observation[25 + i * 6] = others[i].money_in_pot
+                observation[26 + i * 6] = others[i].bet_this_street
+                observation[27 + i * 6] = int(others[i].all_in)
             return observation
         else:
             raise Exception("Invalid observation format: %s" % self.obs_format)
