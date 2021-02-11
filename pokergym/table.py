@@ -101,8 +101,7 @@ class Table(gym.Env):
             if not self._is_action_valid(player, action, valid_actions):
                 player.punish_invalid_action()
                 print("PUNISHED")
-
-            if action.action_type is PlayerAction.FOLD:
+            elif action.action_type is PlayerAction.FOLD:
                 player.fold()
                 self.active_players -= 1
                 self._write_event("%s: folds" % player.name)
@@ -140,6 +139,8 @@ class Table(gym.Env):
                                           )
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
+
+            print("has_acted", player.has_acted)
 
             should_do_street_transition = False
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
