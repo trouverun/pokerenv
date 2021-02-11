@@ -145,8 +145,11 @@ class Table(gym.Env):
                 if self.active_players > 1:
                     biggest_bet_call = max(
                         [p.bet_this_street for p in self.players if p.state is PlayerState.ACTIVE if p is not self.last_bet_placed_by])
-                    if biggest_bet_call < self.last_bet_placed_by.bet_this_street:
-                        amount = self.last_bet_placed_by.bet_this_street - biggest_bet_call
+                    last_bet_this_street = 0
+                    if self.last_bet_placed_by is not None:
+                        last_bet_this_street = self.last_bet_placed_by.bet_this_street
+                    if biggest_bet_call < last_bet_this_street:
+                        amount = last_bet_this_street - biggest_bet_call
                     should_do_street_transition = True
                 # Everone else has folded
                 else:
@@ -171,8 +174,10 @@ class Table(gym.Env):
                     self.acting_player_i = min(active_players_after)
                 else:
                     self.acting_player_i = min(active_players_before)
-                if self.last_bet_placed_by is self.players[self.acting_player_i] or self.first_to_act is self.players[self.acting_player_i] and (self.last_bet_placed_by is None or self.last_bet_placed_by is self.players[self.acting_player_i]):
+                if self.last_bet_placed_by is self.players[self.acting_player_i] or (self.first_to_act is self.players[self.acting_player_i] and (self.last_bet_placed_by is None or self.last_bet_placed_by is self.players[self.acting_player_i])):
                     self.street_finished = True
+                    if len(active_players_before) > 0:
+                        self.acting_player_i = min(active_players_before)
 
         if self.street_finished and not self.hand_is_over:
             self._street_transition()
@@ -360,15 +365,14 @@ class Table(gym.Env):
                 return False
             raise Exception('Something went wrong when validating actions, invalid contents of valid_actions')
         if action.action_type is PlayerAction.BET:
-            if not bet_range[0] < action.bet_amount < bet_range[1]:
-                player.fold()
-                self.active_players -= 1
-                self._write_event("%s: folds" % player.name)
-                return False
-            if action.bet_amount > player.stack:
-                player.fold()
-                self.active_players -= 1
-                self._write_event("%s: folds" % player.name)
+            if not bet_range[0] < action.bet_amount < bet_range[1] or action.bet_amount > player.stack:
+                if PlayerAction.FOLD in action_list:
+                    player.fold()
+                    self.active_players -= 1
+                    self._write_event("%s: folds" % player.name)
+                else:
+                    player.check()
+                    self._write_event("%s: checks" % player.name)
                 return False
         return True
 
