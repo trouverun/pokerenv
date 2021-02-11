@@ -91,9 +91,6 @@ class Table(gym.Env):
 
         if self.first_to_act is None:
             self.first_to_act = player
-        else:
-            if self.first_to_act is player and self.last_bet_placed_by is None:
-                self.street_finished = True
 
         if not (self.hand_is_over or self.street_finished):
             valid_actions = self._get_valid_actions(player)
@@ -174,7 +171,7 @@ class Table(gym.Env):
                     self.acting_player_i = min(active_players_after)
                 else:
                     self.acting_player_i = min(active_players_before)
-                if self.last_bet_placed_by is self.players[self.current_player_i]:
+                if self.last_bet_placed_by is self.players[self.acting_player_i] or self.first_to_act is self.players[self.acting_player_i] and (self.last_bet_placed_by is None or self.last_bet_placed_by is self.players[self.acting_player_i]):
                     self.street_finished = True
 
         if self.street_finished and not self.hand_is_over:
