@@ -13,25 +13,25 @@ BB = 5
 
 class Table(gym.Env):
     def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5, obs_format='dict'):
+        self.rng = np.random.default_rng(seed)
         self.obs_format = obs_format
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
+        self.history = []
         self.stack_low = stack_low
         self.stack_high = stack_high
-        self.rng = np.random.default_rng(seed)
-        self.n_players = n_players
         self.pot = 0
         self.bet_to_match = 0
         self.minimum_raise = 0
         self.street = GameState.PREFLOP
-        self.cards = []
         self.deck = Deck()
+        self.evaluator = Evaluator()
+        self.cards = []
+        self.n_players = n_players
         self.players = [Player(n+1, 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
         self.active_players = n_players
-        self.acting_player_i = min(self.n_players-1, 2)
-        self.current_player_i = self.acting_player_i
-        self.evaluator = Evaluator()
-        self.history = []
+        self.next_player_i = min(self.n_players-1, 2)
+        self.current_player_i = self.next_player_i
         self.street_finished = False
         self.hand_is_over = False
         self.hand_ended_last_turn = False
@@ -45,18 +45,18 @@ class Table(gym.Env):
     def reset(self):
         self.pot = 0
         self.street = GameState.PREFLOP
-        self.cards = []
         self.deck.cards = Deck.GetFullDeck()
         self.rng.shuffle(self.deck.cards)
+        self.cards = []
         self.active_players = self.n_players
-        self.acting_player_i = min(self.n_players-1, 2)
-        self.current_player_i = self.acting_player_i
+        self.next_player_i = min(self.n_players-1, 2)
+        self.current_player_i = self.next_player_i
         self.first_to_act = None
-        initial_draw = self.deck.draw(self.n_players * 2)
         self.street_finished = False
         self.hand_is_over = False
         self.hand_ended_last_turn = False
         self.final_rewards_collected = 0
+        initial_draw = self.deck.draw(self.n_players * 2)
         for i, player in enumerate(self.players):
             player.reset()
             player.position = i
@@ -77,10 +77,10 @@ class Table(gym.Env):
                 self._write_event("%s: posts big blind $%.2f" % (player.name, BB))
         if self.hand_history_enabled:
             self._write_hole_cards()
-        return self._get_observation(self.players[self.acting_player_i])
+        return self._get_observation(self.players[self.next_player_i])
 
     def step(self, action: Action):
-        self.current_player_i = self.acting_player_i
+        self.current_player_i = self.next_player_i
         player = self.players[self.current_player_i]
 
         if (player.all_in or player.state is not PlayerState.ACTIVE) and not self.hand_is_over:
@@ -171,13 +171,14 @@ class Table(gym.Env):
                 active_players_before = [i for i in range(self.n_players) if i <= self.current_player_i if
                                          self.players[i].state is PlayerState.ACTIVE if not self.players[i].all_in]
                 if len(active_players_after) > 0:
-                    self.acting_player_i = min(active_players_after)
+                    self.next_player_i = min(active_players_after)
                 else:
-                    self.acting_player_i = min(active_players_before)
-                if self.last_bet_placed_by is self.players[self.acting_player_i] or (self.first_to_act is self.players[self.acting_player_i] and (self.last_bet_placed_by is None or self.last_bet_placed_by is self.players[self.acting_player_i])):
+                    self.next_player_i = min(active_players_before)
+                next_player = self.players[self.next_player_i]
+                if self.last_bet_placed_by is next_player or (self.first_to_act is next_player and self.last_bet_placed_by is None):
                     self.street_finished = True
                     if len(active_players_before) > 0:
-                        self.acting_player_i = min(active_players_before)
+                        self.next_player_i = min(active_players_before)
 
         if self.street_finished and not self.hand_is_over:
             self._street_transition()
@@ -190,11 +191,11 @@ class Table(gym.Env):
             active_players_after = [i for i in range(self.n_players) if i > self.current_player_i]
             active_players_before = [i for i in range(self.n_players) if i <= self.current_player_i]
             if len(active_players_after) > 0:
-                self.acting_player_i = min(active_players_after)
+                self.next_player_i = min(active_players_after)
             else:
-                self.acting_player_i = min(active_players_before)
+                self.next_player_i = min(active_players_before)
 
-        return self._get_observation(self.players[self.acting_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players-1)
+        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players-1)
 
     def _street_transition(self, transition_to_end=False):
         transitioned = False
@@ -282,7 +283,7 @@ class Table(gym.Env):
             ]
             return {
                 'info': {
-                    'next_player_to_act': self.acting_player_i,
+                    'next_player_to_act': self.next_player_i,
                     'hand_is_over': self.hand_ended_last_turn,
                     'should_save_obseravtion': not self.hand_is_over,
                     'valid_actions': self._get_valid_actions(player)
@@ -312,7 +313,7 @@ class Table(gym.Env):
             }
         elif self.obs_format == 'array':
             observation = np.zeros(63)
-            observation[0] = self.acting_player_i
+            observation[0] = self.next_player_i
             observation[1] = self.hand_is_over
             observation[2] = int(self.hand_ended_last_turn)
 
@@ -384,9 +385,9 @@ class Table(gym.Env):
             valid_actions.remove(PlayerAction.FOLD)
         if self.bet_to_match != 0:
             valid_actions.remove(PlayerAction.CHECK)
-            if player.stack < max(self.bet_to_match + self.minimum_raise, 1):
-                valid_bet_range = [0, 0]
-                valid_actions.remove(PlayerAction.BET)
+        if player.stack < max(self.bet_to_match + self.minimum_raise, 1):
+            valid_bet_range = [0, 0]
+            valid_actions.remove(PlayerAction.BET)
         return {'actions_list': valid_actions, 'bet_range': valid_bet_range}
 
     def _finish_hand(self):
