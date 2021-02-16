@@ -134,8 +134,6 @@ class Table(gym.Env):
                                           )
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
-            else:
-                raise Exception("Invalid action")
 
             should_do_street_transition = False
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
@@ -366,7 +364,7 @@ class Table(gym.Env):
                 return False
             raise Exception('Something went wrong when validating actions, invalid contents of valid_actions')
         if action.action_type is PlayerAction.BET:
-            if not bet_range[0] < action.bet_amount < bet_range[1] or action.bet_amount > player.stack:
+            if not bet_range[0] <= action.bet_amount <= bet_range[1] or action.bet_amount > player.stack:
                 if PlayerAction.FOLD in action_list:
                     player.fold()
                     self.active_players -= 1
@@ -437,6 +435,7 @@ class Table(gym.Env):
             for player in active_players:
                 pot += min_money_in_pot
                 player.money_in_pot -= min_money_in_pot
+                player.winnings -= min_money_in_pot
             best_hand_rank = min([p.hand_rank for p in active_players])
             winners = [p for p in active_players if p.hand_rank == best_hand_rank]
             for winner in winners:

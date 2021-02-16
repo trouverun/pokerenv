@@ -27,7 +27,9 @@ class Player:
 
     def get_reward(self):
         if self.has_acted:
-            return self.pending_penalty + self.winnings
+            tmp = self.pending_penalty
+            self.pending_penalty = 0
+            return tmp + self.winnings
         else:
             return None
 
