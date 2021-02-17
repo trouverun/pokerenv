@@ -28,7 +28,8 @@ class Table(gym.Env):
         self.evaluator = Evaluator()
         self.cards = []
         self.n_players = n_players
-        self.players = [Player(n+1, 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
+        self.all_players = [Player(n+1, 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
+        self.players = self.all_players[:n_players]
         self.active_players = n_players
         self.next_player_i = min(self.n_players-1, 2)
         self.current_player_i = self.next_player_i
@@ -49,6 +50,7 @@ class Table(gym.Env):
         self.rng.shuffle(self.deck.cards)
         self.cards = []
         self.active_players = self.n_players
+        self.players = self.all_players[:self.n_players]
         self.next_player_i = min(self.n_players-1, 2)
         self.current_player_i = self.next_player_i
         self.first_to_act = None
@@ -423,6 +425,7 @@ class Table(gym.Env):
         for player in self.players:
             if player.state is not PlayerState.ACTIVE:
                 pot += player.money_in_pot
+                # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
                 player.winnings -= player.money_in_pot
         active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
         if len(active_players) == 1:
