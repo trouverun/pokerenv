@@ -10,7 +10,7 @@ The observation space and other details are described in the wiki (WIP): https:/
 pip install pokerenv
 ```
 
-## Example
+## Toy example
 
 ### Define an agent
 
@@ -25,16 +25,20 @@ class ExampleRandomAgent():
         self.observations = []
         self.rewards = []
 
-    def get_action(self, observation, self_index):
-        self.observations.append(observation)
-        action_list = observation['info']['valid_actions']['actions_list']
-        bet_range = observation['info']['valid_actions']['bet_range']
-        chosen = PlayerAction(np.random.choice(action_list))
-        betsize = 0
-        if chosen is PlayerAction.BET:
-            betsize = np.random.uniform(bet_range[0], bet_range[1])
-        action = Action(chosen, betsize, self_index)
-        self.actions.append(action)
+    def get_action(self, observation):
+        if not observation['info']['hand_is_over']:
+            self.observations.append(observation)
+            action_list = observation['info']['valid_actions']['actions_list']
+            bet_range = observation['info']['valid_actions']['bet_range']
+            chosen = PlayerAction(np.random.choice(action_list))
+            betsize = 0
+            if chosen is PlayerAction.BET:
+                betsize = np.random.uniform(bet_range[0], bet_range[1])
+            action = Action(chosen, betsize)
+            self.actions.append(action)
+        else:
+            # Hand is over and we are only collecting rewards, actions are ignored so send a dummy action
+            action = Action(0, 0, 0)
         return action
 
 ```
@@ -67,6 +71,13 @@ while True:
     while True:
         action = agents[acting_player].get_action(obs, next_acting_player)
         obs, reward, finished = table.step(action)
+        
+        # Check if the reward corresponds to the previous action taken, or if it is a delayed reward given at the end of a game
+        if not obs['info']['delayed_reward']:
+            agents[i].rewards.append(reward)
+        else:
+            agents[i].rewards[-1] += reward
+        
         if finished:
             break
         next_acting_player = obs['info']['next_player_to_act']
