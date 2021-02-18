@@ -1,9 +1,11 @@
 # Pokerenv
-This version implements the openAI gym interface.
+Pokerenv is an openAI gym (https://gym.openai.com/docs/) compliant reinforcement learning environment for No Limit Texas Hold'em. It supports 2-6 player tables.
+
+The environment can be configured to output hand history files, which can be viewed with any pokerstars compatible tracking software (holdem manager, pokertracker, etc.), allowing you to easily track the learning process.
 
 ## Installation
 ```shell
-pip install https://github.com/trouverun/pokerenv/archive/openai-compliant.zip
+pip install pokerenv
 ```
 
 ## Example
@@ -46,7 +48,7 @@ high_stack_bbs = 200
 hh_location = 'hands/'
 invalid_penalty = -15
 
-table = Table(active_players, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
+table = Table(active_players, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty, obs_format='dict')
 ```
 
 ### Implement learning loop
@@ -56,6 +58,8 @@ while True:
     if iteration == 50:
         table.hand_history_enabled = True
         iteration = 0
+    table.n_players = np.random.randint(2, 7)
+    
     obs = table.reset()
     next_acting_player = obs['info']['next_player_to_act']
     while True:
@@ -65,6 +69,7 @@ while True:
             break
         next_acting_player = obs['info']['next_player_to_act']
     iteration += 1
+    
     table.hand_history_enabled = False
   
 ```
