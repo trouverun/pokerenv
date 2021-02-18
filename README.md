@@ -39,7 +39,7 @@ class ExampleRandomAgent:
             action = Action(chosen, betsize)
             self.actions.append(action)
         else:
-            # Hand is over and we are only collecting rewards, actions are ignored so send a dummy action
+            # Hand is over and we are only collecting final rewards, actions are ignored so send a dummy action without recording it
             action = Action(0, 0)
         return action
 
@@ -66,8 +66,8 @@ while True:
     if iteration == 50:
         table.hand_history_enabled = True
         iteration = 0
+    # Set a random number of players each hand
     table.n_players = np.random.randint(2, 7)
-    
     obs = table.reset()
     next_acting_player = obs['info']['next_player_to_act']
     while True:
@@ -82,7 +82,6 @@ while True:
         
         if finished:
             break
-           
         next_acting_player = obs['info']['next_player_to_act']
     iteration += 1
     
