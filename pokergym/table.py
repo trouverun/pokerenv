@@ -52,7 +52,7 @@ class Table(gym.Env):
         self.cards = []
         self.active_players = self.n_players
         self.players = self.all_players[:self.n_players]
-        self.next_player_i = min(self.n_players-2, 2)
+        self.next_player_i = 0 if self.n_players == 2 else 2
         self.current_player_i = self.next_player_i
         self.first_to_act = None
         self.street_finished = False
