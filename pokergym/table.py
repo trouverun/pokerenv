@@ -52,7 +52,7 @@ class Table(gym.Env):
         self.cards = []
         self.active_players = self.n_players
         self.players = self.all_players[:self.n_players]
-        self.next_player_i = min(self.n_players-1, 2)
+        self.next_player_i = 0 if self.n_players == 2 else 2
         self.current_player_i = self.next_player_i
         self.first_to_act = None
         self.street_finished = False
@@ -198,7 +198,7 @@ class Table(gym.Env):
             else:
                 self.next_player_i = min(active_players_before)
 
-        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players-1)
+        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players) # self.n_players-1?
 
     def _street_transition(self, transition_to_end=False):
         transitioned = False
@@ -315,7 +315,7 @@ class Table(gym.Env):
                 # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
         active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
         if len(active_players) == 1:
-            active_players[0].winnings += pot + active_players[0].money_in_pot
+            active_players[0].winnings += pot
             active_players[0].winnings_for_hh += pot + active_players[0].money_in_pot
             return
         for player in active_players:
@@ -389,7 +389,7 @@ class Table(gym.Env):
                 'info': {
                     'next_player_to_act': self.next_player_i,
                     'hand_is_over': self.hand_is_over,
-                    'should_ignore_observation': self.hand_ended_last_turn,
+                    'delayed_reward': self.hand_ended_last_turn,
                     'valid_actions': self._get_valid_actions(player)
                 },
                 'self': {
