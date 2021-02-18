@@ -39,7 +39,8 @@ class ExampleRandomAgent:
             action = Action(chosen, betsize)
             self.actions.append(action)
         else:
-            # Hand is over and we are only collecting final rewards, actions are ignored so send a dummy action without recording it
+            # Hand is over and we are only collecting final rewards, actions are ignored,
+            # so send a dummy action without recording it
             action = Action(0, 0)
         return action
 
@@ -74,7 +75,8 @@ while True:
         action = agents[next_acting_player].get_action(obs)
         obs, reward, finished = table.step(action)
         
-        # Check if the reward corresponds to the previous action taken, or if it is a delayed reward given at the end of a game (should be added to latest reward)
+        # Check if the reward corresponds to the previous action taken, 
+        # or if it is a delayed reward given at the end of a game (should be added to latest reward)
         if not obs['info']['delayed_reward']:
             agents[next_acting_player].rewards.append(reward)
         else:
