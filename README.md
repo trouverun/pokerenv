@@ -3,6 +3,8 @@ Pokerenv is an openAI gym (https://gym.openai.com/docs/) compliant reinforcement
 
 The environment can be configured to output hand history files, which can be viewed with any pokerstars compatible tracking software (holdem manager, pokertracker, etc.), allowing you to easily track the learning process.
 
+The observation space and other details are described in the wiki (WIP): https://github.com/trouverun/pokerenv/wiki/ 
+
 ## Installation
 ```shell
 pip install pokerenv
@@ -73,5 +75,3 @@ while True:
     table.hand_history_enabled = False
   
 ```
-
-The observation space and other details are described in the wiki (WIP): https://github.com/trouverun/pokerenv/wiki/ 
