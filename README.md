@@ -39,7 +39,7 @@ class ExampleRandomAgent():
             self.actions.append(action)
         else:
             # Hand is over and we are only collecting rewards, actions are ignored so send a dummy action
-            action = Action(0, 0, 0)
+            action = Action(0, 0)
         return action
 
 ```
