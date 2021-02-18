@@ -12,7 +12,8 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5, obs_format='dict'):
+    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/',
+                 invalid_action_penalty=-5, obs_format='dict'):
         self.rng = np.random.default_rng(seed)
         self.obs_format = obs_format
         self.hand_history_location = hand_history_location
@@ -141,18 +142,20 @@ class Table(gym.Env):
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
             if len(players_with_actions) < 2:
                 amount = 0
-                # Everone else is all-in or folded
                 if self.active_players > 1:
+                    # Everyone else is all-in or folded, return any uncalled bets and transition to end
                     biggest_bet_call = max(
-                        [p.bet_this_street for p in self.players if p.state is PlayerState.ACTIVE if p is not self.last_bet_placed_by])
+                        [p.bet_this_street for p in self.players
+                         if p.state is PlayerState.ACTIVE if p is not self.last_bet_placed_by]
+                    )
                     last_bet_this_street = 0
                     if self.last_bet_placed_by is not None:
                         last_bet_this_street = self.last_bet_placed_by.bet_this_street
                     if biggest_bet_call < last_bet_this_street:
                         amount = last_bet_this_street - biggest_bet_call
                     should_do_street_transition = True
-                # Everone else has folded
                 else:
+                    # Everyone else has folded
                     self.hand_is_over = True
                     amount = self.minimum_raise
                 if amount > 0:
@@ -274,6 +277,107 @@ class Table(gym.Env):
         self.minimum_raise = new_amount - self.bet_to_match
         self.bet_to_match = new_amount
 
+    def _finish_hand(self):
+        for player in self.players:
+            if self.hand_history_enabled:
+                if player.winnings_for_hh > 0:
+                    self._write_event("%s collected $%.2f from pot" % (player.name, player.winnings_for_hh*BB))
+
+        self._write_event("*** SUMMARY ***")
+        self._write_event("Total pot $%.2f | Rake $%.2f" % (self.pot*BB, 0))
+        if self.street == GameState.FLOP:
+            self._write_event("Board [%s %s %s]" %
+                                (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
+                                 Card.int_to_str(self.cards[2]))
+                                )
+        elif self.street == GameState.TURN:
+            self._write_event("Board [%s %s %s %s]" %
+                                (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
+                                 Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3]))
+                                )
+        elif self.street == GameState.RIVER:
+            self._write_event("Board [%s %s %s %s %s]" %
+                                (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
+                                 Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3]),
+                                 Card.int_to_str(self.cards[4]))
+                                )
+        if self.hand_history_enabled and self.hand_history_location is not None:
+            with open('%s/handhistory_%s.txt' % (self.hand_history_location, time.time()), 'w') as f:
+                for row in self.history:
+                    f.writelines(row + '\n')
+
+    def _distribute_pot(self):
+        pot = 0
+        for player in self.players:
+            if player.state is not PlayerState.ACTIVE:
+                pot += player.money_in_pot
+                player.winnings -= player.money_in_pot
+                # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
+        active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
+        if len(active_players) == 1:
+            active_players[0].winnings += pot + active_players[0].money_in_pot
+            active_players[0].winnings_for_hh += pot + active_players[0].money_in_pot
+            return
+        for player in active_players:
+            player.calculate_hand_rank(self.evaluator, self.cards)
+        while True:
+            min_money_in_pot = min([p.money_in_pot for p in active_players])
+            for player in active_players:
+                pot += min_money_in_pot
+                player.money_in_pot -= min_money_in_pot
+                player.winnings -= min_money_in_pot
+            best_hand_rank = min([p.hand_rank for p in active_players])
+            winners = [p for p in active_players if p.hand_rank == best_hand_rank]
+            for winner in winners:
+                winner.winnings += pot / len(winners)
+                winner.winnings_for_hh += pot / len(winners)
+            active_players = [p for p in active_players if p.money_in_pot > 0]
+            if len(active_players) <= 1:
+                if len(active_players) == 1:
+                    active_players[0].winnings += active_players[0].money_in_pot
+                    active_players[0].winnings_for_hh += active_players[0].money_in_pot
+                break
+            pot = 0
+
+    def _is_action_valid(self, player, action, valid_actions):
+        action_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
+
+        if action.action_type not in action_list:
+            if PlayerAction.FOLD in action_list:
+                player.fold()
+                self.active_players -= 1
+                self._write_event("%s: folds" % player.name)
+                return False
+            if PlayerAction.CHECK in action_list:
+                player.check()
+                self._write_event("%s: checks" % player.name)
+                return False
+            raise Exception('Something went wrong when validating actions, invalid contents of valid_actions')
+        if action.action_type is PlayerAction.BET:
+            if not bet_range[0] <= action.bet_amount <= bet_range[1] or action.bet_amount > player.stack:
+                if PlayerAction.FOLD in action_list:
+                    player.fold()
+                    self.active_players -= 1
+                    self._write_event("%s: folds" % player.name)
+                else:
+                    player.check()
+                    self._write_event("%s: checks" % player.name)
+                return False
+        return True
+
+    def _get_valid_actions(self, player):
+        valid_actions = [PlayerAction.CHECK, PlayerAction.FOLD, PlayerAction.BET, PlayerAction.CALL]
+        valid_bet_range = [max(self.bet_to_match + self.minimum_raise, 1), player.stack]
+        if self.bet_to_match == 0:
+            valid_actions.remove(PlayerAction.CALL)
+            valid_actions.remove(PlayerAction.FOLD)
+        if self.bet_to_match != 0:
+            valid_actions.remove(PlayerAction.CHECK)
+        if player.stack < max(self.bet_to_match + self.minimum_raise, 1):
+            valid_bet_range = [0, 0]
+            valid_actions.remove(PlayerAction.BET)
+        return {'actions_list': valid_actions, 'bet_range': valid_bet_range}
+
     def _get_observation(self, player):
         if self.obs_format == 'dict':
             keys = ['position', 'state', 'stack', 'money_in_pot', 'bet_this_street', 'all_in']
@@ -284,8 +388,8 @@ class Table(gym.Env):
             return {
                 'info': {
                     'next_player_to_act': self.next_player_i,
-                    'hand_is_over': self.hand_ended_last_turn,
-                    'should_save_obseravtion': not self.hand_is_over,
+                    'hand_is_over': self.hand_is_over,
+                    'should_ignore_observation': self.hand_ended_last_turn,
                     'valid_actions': self._get_valid_actions(player)
                 },
                 'self': {
@@ -350,104 +454,3 @@ class Table(gym.Env):
             return observation
         else:
             raise Exception("Invalid observation format: %s" % self.obs_format)
-
-    def _is_action_valid(self, player, action, valid_actions):
-        action_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
-
-        if action.action_type not in action_list:
-            if PlayerAction.FOLD in action_list:
-                player.fold()
-                self.active_players -= 1
-                self._write_event("%s: folds" % player.name)
-                return False
-            if PlayerAction.CHECK in action_list:
-                player.check()
-                self._write_event("%s: checks" % player.name)
-                return False
-            raise Exception('Something went wrong when validating actions, invalid contents of valid_actions')
-        if action.action_type is PlayerAction.BET:
-            if not bet_range[0] <= action.bet_amount <= bet_range[1] or action.bet_amount > player.stack:
-                if PlayerAction.FOLD in action_list:
-                    player.fold()
-                    self.active_players -= 1
-                    self._write_event("%s: folds" % player.name)
-                else:
-                    player.check()
-                    self._write_event("%s: checks" % player.name)
-                return False
-        return True
-
-    def _get_valid_actions(self, player):
-        valid_actions = [PlayerAction.CHECK, PlayerAction.FOLD, PlayerAction.BET, PlayerAction.CALL]
-        valid_bet_range = [max(self.bet_to_match + self.minimum_raise, 1), player.stack]
-        if self.bet_to_match == 0:
-            valid_actions.remove(PlayerAction.CALL)
-            valid_actions.remove(PlayerAction.FOLD)
-        if self.bet_to_match != 0:
-            valid_actions.remove(PlayerAction.CHECK)
-        if player.stack < max(self.bet_to_match + self.minimum_raise, 1):
-            valid_bet_range = [0, 0]
-            valid_actions.remove(PlayerAction.BET)
-        return {'actions_list': valid_actions, 'bet_range': valid_bet_range}
-
-    def _finish_hand(self):
-        for player in self.players:
-            if self.hand_history_enabled:
-                if player.winnings_for_hh > 0:
-                    self._write_event("%s collected $%.2f from pot" % (player.name, player.winnings_for_hh*BB))
-
-        self._write_event("*** SUMMARY ***")
-        self._write_event("Total pot $%.2f | Rake $%.2f" % (self.pot*BB, 0))
-        if self.street == GameState.FLOP:
-            self._write_event("Board [%s %s %s]" %
-                                (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
-                                 Card.int_to_str(self.cards[2]))
-                                )
-        elif self.street == GameState.TURN:
-            self._write_event("Board [%s %s %s %s]" %
-                                (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
-                                 Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3]))
-                                )
-        elif self.street == GameState.RIVER:
-            self._write_event("Board [%s %s %s %s %s]" %
-                                (Card.int_to_str(self.cards[0]), Card.int_to_str(self.cards[1]),
-                                 Card.int_to_str(self.cards[2]), Card.int_to_str(self.cards[3]),
-                                 Card.int_to_str(self.cards[4]))
-                                )
-        if self.hand_history_enabled and self.hand_history_location is not None:
-            with open('%s/handhistory_%s.txt' % (self.hand_history_location, time.time()), 'w') as f:
-                for row in self.history:
-                    f.writelines(row + '\n')
-
-    def _distribute_pot(self):
-        pot = 0
-        for player in self.players:
-            if player.state is not PlayerState.ACTIVE:
-                pot += player.money_in_pot
-                player.winnings -= player.money_in_pot
-                # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
-        active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
-        if len(active_players) == 1:
-            active_players[0].winnings += pot + active_players[0].money_in_pot
-            active_players[0].winnings_for_hh += pot + active_players[0].money_in_pot
-            return
-        for player in active_players:
-            player.calculate_hand_rank(self.evaluator, self.cards)
-        while True:
-            min_money_in_pot = min([p.money_in_pot for p in active_players])
-            for player in active_players:
-                pot += min_money_in_pot
-                player.money_in_pot -= min_money_in_pot
-                player.winnings -= min_money_in_pot
-            best_hand_rank = min([p.hand_rank for p in active_players])
-            winners = [p for p in active_players if p.hand_rank == best_hand_rank]
-            for winner in winners:
-                winner.winnings += pot / len(winners)
-                winner.winnings_for_hh += pot / len(winners)
-            active_players = [p for p in active_players if p.money_in_pot > 0]
-            if len(active_players) <= 1:
-                if len(active_players) == 1:
-                    active_players[0].winnings += active_players[0].money_in_pot
-                    active_players[0].winnings_for_hh += active_players[0].money_in_pot
-                break
-            pot = 0
