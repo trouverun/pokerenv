@@ -389,7 +389,7 @@ class Table(gym.Env):
                 'info': {
                     'next_player_to_act': self.next_player_i,
                     'hand_is_over': self.hand_is_over,
-                    'should_ignore_observation': self.hand_ended_last_turn,
+                    'delayed_reward': self.hand_ended_last_turn,
                     'valid_actions': self._get_valid_actions(player)
                 },
                 'self': {
