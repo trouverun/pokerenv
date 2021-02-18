@@ -198,7 +198,7 @@ class Table(gym.Env):
             else:
                 self.next_player_i = min(active_players_before)
 
-        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players-1)
+        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players) # self.n_players-1?
 
     def _street_transition(self, transition_to_end=False):
         transitioned = False
