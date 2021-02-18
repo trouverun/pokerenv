@@ -315,7 +315,7 @@ class Table(gym.Env):
                 # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
         active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
         if len(active_players) == 1:
-            active_players[0].winnings += pot + active_players[0].money_in_pot
+            active_players[0].winnings += pot
             active_players[0].winnings_for_hh += pot + active_players[0].money_in_pot
             return
         for player in active_players:
