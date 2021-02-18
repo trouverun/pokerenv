@@ -73,3 +73,5 @@ while True:
     table.hand_history_enabled = False
   
 ```
+
+The observation space and other details are described in the wiki (WIP): https://github.com/trouverun/pokerenv/wiki/ 
