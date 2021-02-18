@@ -26,6 +26,7 @@ class ExampleRandomAgent():
         self.rewards = []
 
     def get_action(self, observation):
+        # Only save valid observations
         if not observation['info']['hand_is_over']:
             self.observations.append(observation)
             action_list = observation['info']['valid_actions']['actions_list']
@@ -72,7 +73,7 @@ while True:
         action = agents[acting_player].get_action(obs, next_acting_player)
         obs, reward, finished = table.step(action)
         
-        # Check if the reward corresponds to the previous action taken, or if it is a delayed reward given at the end of a game
+        # Check if the reward corresponds to the previous action taken, or if it is a delayed reward given at the end of a game (should be added to latest reward)
         if not obs['info']['delayed_reward']:
             agents[i].rewards.append(reward)
         else:
