@@ -416,7 +416,7 @@ class Table(gym.Env):
 
             }
         elif self.obs_format == 'array':
-            observation = np.zeros(63)
+            observation = np.zeros(67)
             observation[0] = self.next_player_i
             observation[1] = self.hand_is_over
             observation[2] = int(self.hand_ended_last_turn)
@@ -440,18 +440,18 @@ class Table(gym.Env):
             for i in range(len(self.cards)):
                 observation[18 + (i * 2)] = Card.get_suit_int(self.cards[i])
                 observation[19 + (i * 2)] = Card.get_rank_int(self.cards[i])
-            observation[20] = self.pot
-            observation[21] = self.bet_to_match
-            observation[22] = self.minimum_raise
+            observation[22] = self.pot
+            observation[23] = self.bet_to_match
+            observation[24] = self.minimum_raise
 
             others = [other for other in self.players if other is not player]
             for i in range(len(others)):
-                observation[23 + i * 6] = others[i].position
-                observation[24 + i * 6] = others[i].state.value
-                observation[25 + i * 6] = others[i].stack
-                observation[26 + i * 6] = others[i].money_in_pot
-                observation[27 + i * 6] = others[i].bet_this_street
-                observation[28 + i * 6] = int(others[i].all_in)
+                observation[25 + i * 6] = others[i].position
+                observation[26 + i * 6] = others[i].state.value
+                observation[27 + i * 6] = others[i].stack
+                observation[28 + i * 6] = others[i].money_in_pot
+                observation[29 + i * 6] = others[i].bet_this_street
+                observation[30 + i * 6] = int(others[i].all_in)
             return observation
         else:
             raise Exception("Invalid observation format: %s" % self.obs_format)
