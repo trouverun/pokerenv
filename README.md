@@ -15,12 +15,13 @@ pip install pokerenv
 ### Define an agent
 
 ```python
+import numpy as np
 from pokergym.table import Table
 from pokergym.common import PlayerAction, Action
 
 
-class ExampleRandomAgent():
-    def __init__(self, identifier):
+class ExampleRandomAgent:
+    def __init__(self):
         self.actions = []
         self.observations = []
         self.rewards = []
@@ -48,7 +49,7 @@ class ExampleRandomAgent():
 ### Create an environment
 ```python
 active_players = 6
-agents = [RandomAgent() for i in range(6)]
+agents = [ExampleRandomAgent() for _ in range(6)]
 random_seed = 1
 low_stack_bbs = 50
 high_stack_bbs = 200
@@ -70,17 +71,18 @@ while True:
     obs = table.reset()
     next_acting_player = obs['info']['next_player_to_act']
     while True:
-        action = agents[acting_player].get_action(obs, next_acting_player)
+        action = agents[next_acting_player].get_action(obs)
         obs, reward, finished = table.step(action)
         
         # Check if the reward corresponds to the previous action taken, or if it is a delayed reward given at the end of a game (should be added to latest reward)
         if not obs['info']['delayed_reward']:
-            agents[i].rewards.append(reward)
+            agents[next_acting_player].rewards.append(reward)
         else:
-            agents[i].rewards[-1] += reward
+            agents[next_acting_player].rewards[-1] += reward
         
         if finished:
             break
+           
         next_acting_player = obs['info']['next_player_to_act']
     iteration += 1
     
