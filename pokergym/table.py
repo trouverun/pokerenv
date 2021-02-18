@@ -393,9 +393,8 @@ class Table(gym.Env):
     def _finish_hand(self):
         for player in self.players:
             if self.hand_history_enabled:
-                if player.winnings > 0:
-                    player.winnings = np.round(player.winnings, 2)
-                    self._write_event("%s collected $%.2f from pot" % (player.name, player.winnings*BB))
+                if player.winnings_for_hh > 0:
+                    self._write_event("%s collected $%.2f from pot" % (player.name, player.winnings_for_hh*BB))
 
         self._write_event("*** SUMMARY ***")
         self._write_event("Total pot $%.2f | Rake $%.2f" % (self.pot*BB, 0))
@@ -425,11 +424,12 @@ class Table(gym.Env):
         for player in self.players:
             if player.state is not PlayerState.ACTIVE:
                 pot += player.money_in_pot
-                # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
                 player.winnings -= player.money_in_pot
+                # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
         active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
         if len(active_players) == 1:
             active_players[0].winnings += pot + active_players[0].money_in_pot
+            active_players[0].winnings_for_hh += pot + active_players[0].money_in_pot
             return
         for player in active_players:
             player.calculate_hand_rank(self.evaluator, self.cards)
@@ -443,9 +443,11 @@ class Table(gym.Env):
             winners = [p for p in active_players if p.hand_rank == best_hand_rank]
             for winner in winners:
                 winner.winnings += pot / len(winners)
+                winner.winnings_for_hh += pot / len(winners)
             active_players = [p for p in active_players if p.money_in_pot > 0]
             if len(active_players) <= 1:
                 if len(active_players) == 1:
                     active_players[0].winnings += active_players[0].money_in_pot
+                    active_players[0].winnings_for_hh += active_players[0].money_in_pot
                 break
             pot = 0

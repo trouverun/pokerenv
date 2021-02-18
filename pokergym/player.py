@@ -17,6 +17,7 @@ class Player:
         self.hand_rank = 0
         self.pending_penalty = 0
         self.winnings = 0
+        self.winnings_for_hh = 0
         self.penalty = penalty
 
     def __lt__(self, other):
@@ -91,3 +92,4 @@ class Player:
         self.hand_rank = 0
         self.pending_penalty = 0
         self.winnings = 0
+        self.winnings_for_hh = 0
