@@ -26,11 +26,6 @@ class TablePosition(IntEnum):
 
 
 class Action:
-    def __init__(self, action_type, bet_amount=0):
+    def __init__(self, action_type, bet_amount):
         self.action_type = action_type
         self.bet_amount = bet_amount
-
-
-class BaseAgent:
-    def step(self, observation, valid_actions, previous_reward, episode_over):
-       pass
