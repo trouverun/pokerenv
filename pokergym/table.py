@@ -13,9 +13,10 @@ BB = 5
 
 class Table(gym.Env):
     def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/',
-                 invalid_action_penalty=-5, obs_format='dict'):
+                 invalid_action_penalty=-5, obs_format='dict', normalize_obs=False):
         self.rng = np.random.default_rng(seed)
         self.obs_format = obs_format
+        self.normalize_obs = normalize_obs
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
         self.history = []
@@ -416,6 +417,8 @@ class Table(gym.Env):
 
             }
         elif self.obs_format == 'array':
+            norm = 1 if not self.normalize_obs else self.pot
+
             observation = np.zeros(60)
             observation[0] = self.next_player_i
             observation[1] = self.hand_is_over
@@ -424,33 +427,33 @@ class Table(gym.Env):
             valid_actions = self._get_valid_actions(player)
             for action in valid_actions['actions_list']:
                 observation[action.value+3] = 1
-            observation[7] = valid_actions['bet_range'][0]
-            observation[8] = valid_actions['bet_range'][1]
+            observation[7] = valid_actions['bet_range'][0] / norm
+            observation[8] = valid_actions['bet_range'][1] / norm
 
             observation[9] = player.position
             observation[10] = Card.get_suit_int(player.cards[0])
             observation[11] = Card.get_rank_int(player.cards[0])
             observation[12] = Card.get_suit_int(player.cards[1])
             observation[13] = Card.get_rank_int(player.cards[1])
-            observation[14] = player.stack
-            observation[15] = player.money_in_pot
-            observation[16] = player.bet_this_street
+            observation[14] = player.stack / norm
+            observation[15] = player.money_in_pot / norm
+            observation[16] = player.bet_this_street / norm
 
             observation[17] = self.street
             for i in range(len(self.cards)):
                 observation[18 + (i * 2)] = Card.get_suit_int(self.cards[i])
                 observation[19 + (i * 2)] = Card.get_rank_int(self.cards[i])
             observation[22] = self.pot
-            observation[23] = self.bet_to_match
-            observation[24] = self.minimum_raise
+            observation[23] = self.bet_to_match / norm
+            observation[24] = self.minimum_raise / norm
 
             others = [other for other in self.players if other is not player]
             for i in range(len(others)):
                 observation[25 + i * 6] = others[i].position
                 observation[26 + i * 6] = others[i].state.value
-                observation[27 + i * 6] = others[i].stack
-                observation[28 + i * 6] = others[i].money_in_pot
-                observation[29 + i * 6] = others[i].bet_this_street
+                observation[27 + i * 6] = others[i].stack / norm
+                observation[28 + i * 6] = others[i].money_in_pot / norm
+                observation[29 + i * 6] = others[i].bet_this_street / norm
                 observation[30 + i * 6] = int(others[i].all_in)
             return observation
         else:
