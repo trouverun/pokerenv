@@ -139,9 +139,11 @@ class Table(gym.Env):
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
 
-            should_do_street_transition = False
-            players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in if not (player.acted_this_street and player.bet_this_street == self.bet_to_match)]
-            if len(players_with_actions) < 1:
+            should_transition_to_end = False
+            players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
+            players_who_should_act = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in if not (player.acted_this_street and player.bet_this_street == self.bet_to_match)]
+
+            if len(players_with_actions) == 1 and len(players_who_should_act) == 0:
                 amount = 0
                 if self.active_players > 1:
                     # Everyone else is all-in or folded, return any uncalled bets and transition to end
@@ -154,7 +156,7 @@ class Table(gym.Env):
                         last_bet_this_street = self.last_bet_placed_by.bet_this_street
                     if biggest_bet_call < last_bet_this_street:
                         amount = last_bet_this_street - biggest_bet_call
-                    should_do_street_transition = True
+                    should_transition_to_end = True
                 else:
                     # Everyone else has folded
                     self.hand_is_over = True
@@ -167,7 +169,7 @@ class Table(gym.Env):
                     self._write_event(
                         "Uncalled bet ($%.2f) returned to %s" % (amount * BB, self.last_bet_placed_by.name)
                     )
-                if should_do_street_transition:
+                if should_transition_to_end:
                     self._street_transition(transition_to_end=True)
             else:
                 active_players_after = [i for i in range(self.n_players) if i > self.current_player_i if
@@ -313,7 +315,6 @@ class Table(gym.Env):
             if player.state is not PlayerState.ACTIVE:
                 pot += player.money_in_pot
                 player.winnings -= player.money_in_pot
-                # TODO: these should not be distributed equally for the remaining players in case one bet less than the inactive players(?)
         active_players = [p for p in self.players if p.state is PlayerState.ACTIVE]
         if len(active_players) == 1:
             active_players[0].winnings += pot
