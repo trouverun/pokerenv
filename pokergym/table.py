@@ -141,8 +141,7 @@ class Table(gym.Env):
 
             should_do_street_transition = False
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in if not (player.acted_this_street and player.bet_this_street == self.bet_to_match)]
-
-            if len(players_with_actions) < 2:
+            if len(players_with_actions) < 1:
                 amount = 0
                 if self.active_players > 1:
                     # Everyone else is all-in or folded, return any uncalled bets and transition to end
