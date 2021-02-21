@@ -395,6 +395,7 @@ class Table(gym.Env):
                 'self': {
                     'position': player.position,
                     'cards': [[Card.get_suit_int(card), Card.get_rank_int(card)] for card in player.cards],
+                    'hand_strength': player.calculate_hand_rank(self.evaluator, self.cards),
                     'stack': player.stack,
                     'money_in_pot': player.money_in_pot,
                     'bet_this_street': player.bet_this_street,
@@ -416,7 +417,7 @@ class Table(gym.Env):
 
             }
         elif self.obs_format == 'array':
-            observation = np.zeros(67)
+            observation = np.zeros(68)
             observation[0] = self.next_player_i
             observation[1] = self.hand_is_over
             observation[2] = int(self.hand_ended_last_turn)
@@ -440,18 +441,19 @@ class Table(gym.Env):
             for i in range(len(self.cards)):
                 observation[18 + (i * 2)] = Card.get_suit_int(self.cards[i])
                 observation[19 + (i * 2)] = Card.get_rank_int(self.cards[i])
-            observation[22] = self.pot
-            observation[23] = self.bet_to_match
-            observation[24] = self.minimum_raise
+            observation[22] = player.calculate_hand_rank(self.evaluator, self.cards)
+            observation[23] = self.pot
+            observation[24] = self.bet_to_match
+            observation[25] = self.minimum_raise
 
             others = [other for other in self.players if other is not player]
             for i in range(len(others)):
-                observation[25 + i * 6] = others[i].position
-                observation[26 + i * 6] = others[i].state.value
-                observation[27 + i * 6] = others[i].stack
-                observation[28 + i * 6] = others[i].money_in_pot
-                observation[29 + i * 6] = others[i].bet_this_street
-                observation[30 + i * 6] = int(others[i].all_in)
+                observation[26 + i * 6] = others[i].position
+                observation[27 + i * 6] = others[i].state.value
+                observation[28 + i * 6] = others[i].stack
+                observation[29 + i * 6] = others[i].money_in_pot
+                observation[30 + i * 6] = others[i].bet_this_street
+                observation[31 + i * 6] = int(others[i].all_in)
             return observation
         else:
             raise Exception("Invalid observation format: %s" % self.obs_format)
