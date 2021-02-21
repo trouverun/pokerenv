@@ -5,6 +5,7 @@ class Player:
     def __init__(self, identifier, name, penalty):
         self.state = PlayerState.ACTIVE
         self.has_acted = False
+        self.acted_this_street = False
         self.identifier = identifier
         self.name = name
         self.stack = 0
@@ -36,15 +37,18 @@ class Player:
 
     def fold(self):
         self.has_acted = True
+        self.acted_this_street = True
         self.state = PlayerState.FOLDED
         self.history.append({'action': PlayerAction.FOLD, 'value': 0})
 
     def check(self):
         self.has_acted = True
+        self.acted_this_street = True
         self.history.append({'action': PlayerAction.CHECK, 'value': 0})
 
     def call(self, amount):
         self.has_acted = True
+        self.acted_this_street = True
         amount = amount - self.bet_this_street
         if amount >= self.stack:
             call_size = self.stack
@@ -63,6 +67,7 @@ class Player:
 
     def bet(self, amount):
         self.has_acted = True
+        self.acted_this_street = True
         if amount == self.stack:
             self.all_in = True
         amount = amount - self.bet_this_street
@@ -76,6 +81,7 @@ class Player:
         self.pending_penalty += self.penalty
 
     def finish_street(self):
+        self.acted_this_street = False
         self.bet_this_street = 0
 
     def calculate_hand_rank(self, evaluator, community_cards):
