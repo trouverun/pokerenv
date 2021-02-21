@@ -143,7 +143,7 @@ class Table(gym.Env):
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
             players_who_should_act = [p for p in players_with_actions if not (player.acted_this_street and player.bet_this_street == self.bet_to_match)]
 
-            if len(players_with_actions) == 1 and len(players_who_should_act) == 0:
+            if len(players_with_actions) < 2 and len(players_who_should_act) == 0:
                 amount = 0
                 if self.active_players > 1:
                     # Everyone else is all-in or folded, return any uncalled bets and transition to end
