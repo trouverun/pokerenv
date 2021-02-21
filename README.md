@@ -5,8 +5,6 @@ The environment can be configured to output hand history files, which can be vie
 
 The observation space and other details are described in the wiki (WIP): https://github.com/trouverun/pokerenv/wiki/ 
 
-**In the openai-compliant branch there is also an openAI gym compliant version, which uses the standard gym interface.**
-
 ## Installation
 ```shell
 pip install pokerenv
