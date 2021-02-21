@@ -4,7 +4,7 @@ import gym
 from treys import Deck, Evaluator, Card
 from pokergym.common import GameState, PlayerState, PlayerAction, TablePosition, Action
 from pokergym.player import Player
-from pokergym.utils import pretty_print_hand
+from pokergym.utils import pretty_print_hand, approx_gt, approx_lte
 
 # Just some values to make hand history work properly
 SB = 2.5
@@ -355,7 +355,7 @@ class Table(gym.Env):
                 return False
             raise Exception('Something went wrong when validating actions, invalid contents of valid_actions')
         if action.action_type is PlayerAction.BET:
-            if not bet_range[0] <= action.bet_amount <= bet_range[1] or action.bet_amount > player.stack:
+            if not (approx_lte(bet_range[0], action.bet_amount) and approx_lte(action.bet_amount, bet_range[1])) or approx_gt(action.bet_amount, player.stack):
                 if PlayerAction.FOLD in action_list:
                     player.fold()
                     self.active_players -= 1

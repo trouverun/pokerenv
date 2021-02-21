@@ -107,3 +107,11 @@ def pretty_print_hand(hand_cards, hand_type, table_cards, kicker):
             previous_value = value
         return 'royal flush, %s to %s' % (singulars[low], singulars[high])
     raise Exception("Incorrect hand/table passed to pretty_print_hand")
+
+
+def approx_lte(x, y):
+    return x <= y or np.isclose(x, y)
+
+
+def approx_gt(x, y):
+    return x > y and not np.isclose(x, y)
