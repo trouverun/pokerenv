@@ -370,6 +370,7 @@ class Table(gym.Env):
     def _get_valid_actions(self, player):
         valid_actions = [PlayerAction.CHECK, PlayerAction.FOLD, PlayerAction.BET, PlayerAction.CALL]
         valid_bet_range = [max(self.bet_to_match + self.minimum_raise, 1), player.stack]
+        others_active = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in if p is not player]
         if self.bet_to_match == 0:
             valid_actions.remove(PlayerAction.CALL)
             valid_actions.remove(PlayerAction.FOLD)
@@ -377,6 +378,8 @@ class Table(gym.Env):
             valid_actions.remove(PlayerAction.CHECK)
         if player.stack < max(self.bet_to_match + self.minimum_raise, 1):
             valid_bet_range = [0, 0]
+            valid_actions.remove(PlayerAction.BET)
+        elif len(others_active) == 0:
             valid_actions.remove(PlayerAction.BET)
         return {'actions_list': valid_actions, 'bet_range': valid_bet_range}
 
