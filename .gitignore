@@ -4,4 +4,4 @@ main.py
 build
 dist
 pokerenv.egg-info
-hands
+hands/
