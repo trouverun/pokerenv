@@ -1,0 +1,45 @@
+PokerStars Hand #17165731: Hold'em No Limit ($2.50/$5.00 USD) - 2021/2/18 9:21:13 ET
+Table 'Wempe III' 6-max Seat #2 is the button
+Seat 1: player_0 ($695.00 in chips)
+Seat 2: player_1 ($305.00 in chips)
+Seat 3: player_2 ($735.00 in chips)
+Seat 4: player_3 ($960.00 in chips)
+Seat 5: player_4 ($485.00 in chips)
+Seat 6: player_5 ($475.00 in chips)
+player_0: posts small blind $2.50
+player_1: posts big blind $5.00
+*** HOLE CARDS ***
+Dealt to player_0 [7s 4d]
+Dealt to player_1 [Jh 3c]
+Dealt to player_2 [3s 5h]
+Dealt to player_3 [8h Ks]
+Dealt to player_4 [8d 6h]
+Dealt to player_5 [3h 4s]
+player_2: folds
+player_3: raises $382.85 to $387.85
+player_4: calls $387.85
+player_5: calls $387.85
+player_0: calls $385.35
+player_1: calls $300.00 and is all-in
+*** FLOP *** [Js 2c Ad]
+player_0: checks
+player_3: bets $236.75
+player_4: calls $97.15 and is all-in
+player_5: folds
+player_0: calls $236.75
+*** TURN *** [Js 2c Ad] [Jc]
+player_0: checks
+player_3: bets $219.45
+player_0: calls $70.40 and is all-in
+Uncalled bet ($149.05) returned to player_3
+*** RIVER *** [Js 2c Ad Jc] [5c]
+*** SHOW DOWN ***
+player_0: shows [7s 4d] (a pair of Jacks)
+player_1: shows [Jh 3c] (three of a kind, Jacks)
+player_3: shows [8h Ks] (a pair of Jacks)
+player_4: shows [8d 6h] (a pair of Jacks)
+player_1 collected $1607.85 from pot
+player_3 collected $960.00 from pot
+*** SUMMARY ***
+Total pot $2567.85 | Rake $0.00
+Board [Js 2c Ad Jc 5c]

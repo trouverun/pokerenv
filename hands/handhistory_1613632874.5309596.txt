@@ -1,0 +1,48 @@
+PokerStars Hand #6380533: Hold'em No Limit ($2.50/$5.00 USD) - 2021/2/18 9:21:14 ET
+Table 'Wempe III' 6-max Seat #2 is the button
+Seat 1: player_0 ($900.00 in chips)
+Seat 2: player_1 ($635.00 in chips)
+Seat 3: player_2 ($620.00 in chips)
+Seat 4: player_3 ($865.00 in chips)
+Seat 5: player_4 ($740.00 in chips)
+Seat 6: player_5 ($360.00 in chips)
+player_0: posts small blind $2.50
+player_1: posts big blind $5.00
+*** HOLE CARDS ***
+Dealt to player_0 [Ah 8d]
+Dealt to player_1 [Kd 2c]
+Dealt to player_2 [Th 9s]
+Dealt to player_3 [6d 3h]
+Dealt to player_4 [3s Jh]
+Dealt to player_5 [8s 4h]
+player_2: calls $5.00
+player_3: raises $6.95 to $11.95
+player_4: raises $108.45 to $120.40
+player_5: folds
+player_0: calls $117.90
+player_1: calls $115.40
+player_2: folds
+player_3: raises $170.70 to $291.10
+player_4: raises $239.75 to $530.85
+player_0: raises $246.75 to $777.60
+player_1: calls $514.60 and is all-in
+player_3: calls $486.50
+player_4: calls $209.15 and is all-in
+*** FLOP *** [3d 8c 5s]
+player_0: bets $37.25
+player_3: raises $38.75 to $76.00
+player_0: calls $38.75
+*** TURN *** [3d 8c 5s] [6c]
+player_0: bets $12.10
+player_3: folds
+Uncalled bet ($12.10) returned to player_0
+*** RIVER *** [3d 8c 5s 6c] [3c]
+*** SHOW DOWN ***
+player_0: shows [Ah 8d] (two pair, Eights and Threes)
+player_1: shows [Kd 2c] (a pair of Threes)
+player_4: shows [3s Jh] (three of a kind, Threes)
+player_0 collected $113.60 from pot
+player_4 collected $2973.60 from pot
+*** SUMMARY ***
+Total pot $3087.20 | Rake $0.00
+Board [3d 8c 5s 6c 3c]

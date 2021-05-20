@@ -1,0 +1,35 @@
+PokerStars Hand #15073424: Hold'em No Limit ($2.50/$5.00 USD) - 2021/2/18 9:21:13 ET
+Table 'Wempe III' 6-max Seat #2 is the button
+Seat 1: player_0 ($980.00 in chips)
+Seat 2: player_1 ($395.00 in chips)
+Seat 3: player_2 ($635.00 in chips)
+Seat 4: player_3 ($505.00 in chips)
+Seat 5: player_4 ($645.00 in chips)
+player_0: posts small blind $2.50
+player_1: posts big blind $5.00
+*** HOLE CARDS ***
+Dealt to player_0 [6c Kh]
+Dealt to player_1 [9s 5h]
+Dealt to player_2 [7d 4h]
+Dealt to player_3 [Td Qc]
+Dealt to player_4 [Kd 3h]
+player_2: folds
+player_3: raises $82.05 to $87.05
+player_4: raises $373.25 to $460.30
+player_0: calls $457.80
+player_1: calls $390.00 and is all-in
+player_3: folds
+*** FLOP *** [Ts 2c 3d]
+player_0: bets $371.25
+player_4: calls $184.70 and is all-in
+Uncalled bet ($186.55) returned to player_0
+*** TURN *** [Ts 2c 3d] [Js]
+*** RIVER *** [Ts 2c 3d Js] [3s]
+*** SHOW DOWN ***
+player_0: shows [6c Kh] (a pair of Threes)
+player_1: shows [9s 5h] (a pair of Threes)
+player_4: shows [Kd 3h] (three of a kind, Threes)
+player_4 collected $1772.05 from pot
+*** SUMMARY ***
+Total pot $1772.05 | Rake $0.00
+Board [Ts 2c 3d Js 3s]
