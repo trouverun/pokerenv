@@ -28,7 +28,7 @@ class Table(gym.Env):
         self.evaluator = Evaluator()
         self.cards = []
         self.n_players = n_players
-        self.all_players = [Player(n+1, 'player_%d' % n, invalid_action_penalty) for n in range(n_players)]
+        self.all_players = [Player(n+1, 'player_%d' % (n+1), invalid_action_penalty) for n in range(n_players)]
         self.players = self.all_players[:n_players]
         self.active_players = n_players
         self.next_player_i = min(self.n_players-1, 2)
@@ -52,6 +52,7 @@ class Table(gym.Env):
         self.cards = []
         self.active_players = self.n_players
         self.players = self.all_players[:self.n_players]
+        self.rng.shuffle(self.players)
         self.next_player_i = 0 if self.n_players == 2 else 2
         self.current_player_i = self.next_player_i
         self.first_to_act = None
@@ -385,7 +386,7 @@ class Table(gym.Env):
 
     def _get_observation(self, player):
         observation = np.zeros(60)
-        observation[0] = self.next_player_i
+        observation[0] = player.identifier
         observation[1] = self.hand_is_over
         observation[2] = int(self.hand_ended_last_turn)
 
