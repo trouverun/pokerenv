@@ -13,6 +13,7 @@ BB = 5
 
 class Table(gym.Env):
     def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5):
+        self.current_turn = 0
         self.rng = np.random.default_rng(seed)
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
@@ -43,6 +44,7 @@ class Table(gym.Env):
         self.rng = np.random.default_rng(seed)
 
     def reset(self):
+        self.current_turn = 0
         self.pot = 0
         self.street = GameState.PREFLOP
         self.deck.cards = Deck.GetFullDeck()
@@ -83,6 +85,7 @@ class Table(gym.Env):
     def step(self, action: Action):
         self.current_player_i = self.next_player_i
         player = self.players[self.current_player_i]
+        self.current_turn += 1
 
         if (player.all_in or player.state is not PlayerState.ACTIVE) and not self.hand_is_over:
             raise Exception("A player who is inactive or all-in tried to take an action")
