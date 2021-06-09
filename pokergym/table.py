@@ -28,7 +28,7 @@ class Table(gym.Env):
         self.evaluator = Evaluator()
         self.cards = []
         self.n_players = n_players
-        self.all_players = [Player(n+1, 'player_%d' % (n+1), invalid_action_penalty) for n in range(n_players)]
+        self.all_players = [Player(n, 'player_%d' % (n+1), invalid_action_penalty) for n in range(n_players)]
         self.players = self.all_players[:n_players]
         self.active_players = n_players
         self.next_player_i = min(self.n_players-1, 2)
