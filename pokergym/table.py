@@ -306,7 +306,7 @@ class Table(gym.Env):
                                  Card.int_to_str(self.cards[4]))
                                 )
         if self.hand_history_enabled and self.hand_history_location is not None:
-            with open('%s/handhistory_%s.txt' % (self.hand_history_location, time.time()), 'w') as f:
+            with open('%s' % self.hand_history_location + 'handhistory_%s.txt' % time.time(), 'w') as f:
                 for row in self.history:
                     f.writelines(row + '\n')
 

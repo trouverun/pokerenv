@@ -29,3 +29,6 @@ class Action:
     def __init__(self, action_type, bet_amount=0):
         self.action_type = action_type
         self.bet_amount = bet_amount
+
+
+action_list = [PlayerAction.CHECK, PlayerAction.FOLD, PlayerAction.BET, PlayerAction.CALL]

@@ -1,20 +1,3 @@
-# Pokerenv
-Pokerenv is an openAI gym (https://gym.openai.com/docs/) compliant reinforcement learning environment for No Limit Texas Hold'em. It supports 2-6 player tables.
-
-The environment can be configured to output hand history files, which can be viewed with any pokerstars compatible tracking software (holdem manager, pokertracker, etc.), allowing you to easily track the learning process.
-
-## Installation and dependencies
-```shell
-pip install numpy
-pip install treys
-pip install pokerenv
-```
-
-## Toy example
-
-### Define an agent
-
-```python
 import numpy as np
 import pokergym.obs_indices as indices
 from pokergym.table import Table
@@ -28,8 +11,7 @@ class ExampleRandomAgent:
         self.rewards = []
 
     def get_action(self, observation):
-        # Only save the observation if it corresponds to an actual choice, 
-        # not if the action to be taken is "don't care"
+        # Only save the observation if it corresponds to an actual choice, not if the action to be taken is "don't care"
         if not observation[indices.ACTION_DONT_CARE]:
             self.observations.append(observation)
             valid_actions = np.argwhere(observation[indices.VALID_ACTIONS] == 1).flatten()
@@ -42,15 +24,10 @@ class ExampleRandomAgent:
             table_action = Action(chosen_action, bet_size)
             self.actions.append(table_action)
         else:
-            # If the action is "don't care", 
-            # we are only feeding dummy actions to get the final end of hand rewards back
+            # If the action is "don't care", we are only feeding dummy actions to get the final end of hand rewards back
             table_action = Action(PlayerAction.CHECK, 0)
         return table_action
-```
 
-
-### Create an environment
-```python
 active_players = 6
 agents = [ExampleRandomAgent() for _ in range(6)]
 random_seed = 1
@@ -59,10 +36,8 @@ high_stack_bbs = 200
 hh_location = 'hands/'
 invalid_penalty = 0
 table = Table(active_players, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
-```
 
 ### Implement learning loop
-```python
 iteration = 1
 while True:
     if iteration == 50:
@@ -81,12 +56,10 @@ while True:
             # If the action was not a "don't care", the reward corresponds to the action that we just took
             agents[next_acting_player].rewards.append(reward)
         else:
-            # If the action was a "don't care", 
-            # the reward is a delayed end of game reward which should correspond to the last valid action
+            # If the action was a "don't care", the reward is a delayed end of game reward which should correspond to the last valid action
             agents[next_acting_player].rewards[-1] += reward
         if finished:
             break
         next_acting_player = int(obs[indices.ACTING_PLAYER])
     iteration += 1
     table.hand_history_enabled = False
-```
