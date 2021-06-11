@@ -75,7 +75,7 @@ while True:
     while True:
         action = agents[next_acting_player].get_action(obs)
         action_dont_care = obs[indices.ACTION_DONT_CARE]
-        obs, reward, finished = table.step(action)
+        obs, reward, finished, _ = table.step(action)
 
         if not action_dont_care:
             # If the action was not a "don't care", the reward corresponds to the action that we just took

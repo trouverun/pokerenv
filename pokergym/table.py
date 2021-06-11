@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import gym
+import math
 from treys import Deck, Evaluator, Card
 from pokergym.common import GameState, PlayerState, PlayerAction, TablePosition, Action
 from pokergym.player import Player
@@ -13,6 +14,8 @@ BB = 5
 
 class Table(gym.Env):
     def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5):
+        self.action_space = gym.spaces.Tuple((gym.spaces.Discrete(4), gym.spaces.Box(-math.inf, math.inf, 1)))
+        self.observation_space = gym.spaces.Box(-math.inf, math.inf, 60)
         self.current_turn = 0
         self.rng = np.random.default_rng(seed)
         self.hand_history_location = hand_history_location
@@ -202,7 +205,7 @@ class Table(gym.Env):
             else:
                 self.next_player_i = min(active_players_before)
 
-        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players)
+        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players), {}
 
     def _street_transition(self, transition_to_end=False):
         transitioned = False
