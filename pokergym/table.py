@@ -13,9 +13,9 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=-5):
-        self.action_space = gym.spaces.Tuple((gym.spaces.Discrete(4), gym.spaces.Box(-math.inf, math.inf, 1)))
-        self.observation_space = gym.spaces.Box(-math.inf, math.inf, 60)
+    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
+        self.action_space = gym.spaces.Tuple((gym.spaces.Discrete(4), gym.spaces.Box(-math.inf, math.inf, (1, 1))))
+        self.observation_space = gym.spaces.Box(-math.inf, math.inf, (60, 1))
         self.current_turn = 0
         self.rng = np.random.default_rng(seed)
         self.hand_history_location = hand_history_location
@@ -142,6 +142,8 @@ class Table(gym.Env):
                                           )
                 self._change_bet_to_match(actual_bet_size + previous_bet_this_street)
                 self.last_bet_placed_by = player
+            else:
+                raise Exception("Error when parsing action, make sure player action_type is PlayerAction and not int")
 
             should_transition_to_end = False
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
@@ -388,7 +390,7 @@ class Table(gym.Env):
         return {'actions_list': valid_actions, 'bet_range': valid_bet_range}
 
     def _get_observation(self, player):
-        observation = np.zeros(60)
+        observation = np.zeros(60, dtype=np.float32)
         observation[0] = player.identifier
         observation[1] = self.hand_is_over
         observation[2] = int(self.hand_ended_last_turn)
