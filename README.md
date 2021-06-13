@@ -65,11 +65,12 @@ class ExampleRandomAgent:
 ```python
 active_players = 6
 agents = [ExampleRandomAgent() for _ in range(6)]
+# Bounds for randomizing player stack sizes in reset()
 low_stack_bbs = 50
 high_stack_bbs = 200
-hh_location = 'hands/'
+hand_history_location = 'hands/'
 invalid_action_penalty = 0
-table = Table(active_players, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
+table = Table(active_players, low_stack_bbs, high_stack_bbs, hand_history_location, invalid_penalty)
 table.seed(1)
 ```
 
