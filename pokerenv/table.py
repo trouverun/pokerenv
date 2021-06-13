@@ -3,9 +3,9 @@ import time
 import gym
 import math
 from treys import Deck, Evaluator, Card
-from pokergym.common import GameState, PlayerState, PlayerAction, TablePosition, Action
-from pokergym.player import Player
-from pokergym.utils import pretty_print_hand, approx_gt, approx_lte
+from pokerenv.common import GameState, PlayerState, PlayerAction, TablePosition, Action
+from pokerenv.player import Player
+from pokerenv.utils import pretty_print_hand, approx_gt, approx_lte
 
 # Just some values to make hand history work properly
 SB = 2.5

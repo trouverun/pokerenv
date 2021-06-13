@@ -29,9 +29,9 @@ These have human readable index definitions in the obs_indices module.
 
 ```python
 import numpy as np
-import pokergym.obs_indices as indices
-from pokergym.table import Table
-from pokergym.common import PlayerAction, Action, action_list
+import pokerenv.obs_indices as indices
+from pokerenv.table import Table
+from pokerenv.common import PlayerAction, Action, action_list
 
 
 class ExampleRandomAgent:
