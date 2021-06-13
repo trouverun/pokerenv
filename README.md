@@ -12,7 +12,7 @@ pip install pokerenv
 
 ## Usage information 
 ### Working around delayed rewards
-Due to the fact that the final reward in NL hold'em are sometimes dependent on the actions other players take after you,
+Due to the fact that the final rewards in NL hold'em are sometimes dependent on the actions other players take after you,
 the corresponding reward for an action might be delayed by a time step, meaning that for some actions, the reward you receive is only a placeholder (or the invalid action penalty portion of the reward). 
 This means that some extra logic is needed to assign rewards to actions taken, and that the environment can't be directly used with any baseline RL algorithms, which assume that all rewards correspond the action just taken. 
 
