@@ -1,6 +1,6 @@
 ACTING_PLAYER = 0
-HAND_ENDED = 1          # Hand ended this turn
-ACTION_DONT_CARE = 2    # Hand ended before this turn (== actions are ignored and rewards are total winnings/losses on this hand)
+HAND_IS_OVER = 1    # Hand ended this turn
+DELAYED_REWARD = 2  # The reward corresponds to the time step before (result of a don't care action used to fetch final reward)
 VALID_ACTIONS = [*range(3, 7)]
 VALID_BET_LOW = 7
 VALID_BET_HIGH = 8

@@ -10,6 +10,19 @@ pip install treys
 pip install pokerenv
 ```
 
+## Usage information 
+### Working around delayed rewards
+Due to the fact that the final reward in NL hold'em are sometimes dependent on the actions other players take after you,
+the corresponding reward for an action might be delayed by a time step, meaning that for some actions, the reward you receive is only a placeholder (or the invalid action penalty portion of the reward). 
+This means that some extra logic is needed to assign rewards to actions taken, and that the environment can't be directly used with any baseline RL algorithms, which assume that all rewards correspond the action just taken. 
+
+### Invalid actions
+The environment ignores all invalid actions (action type not available, or bet size is invalid), and either checks or folds automatically.
+If configured to do so, the environment also applies an invalid action penalty to the corresponding reward.
+.
+
+The observation contains entries which allow you to work around the delayed rewards, and to implement invalid action masking. 
+These have human readable index definitions in the obs_indices module.
 ## Toy example
 
 ### Define an agent
@@ -28,9 +41,11 @@ class ExampleRandomAgent:
         self.rewards = []
 
     def get_action(self, observation):
-        # Only save the observation if it corresponds to an actual choice, 
-        # not if the action to be taken is "don't care"
-        if not observation[indices.ACTION_DONT_CARE]:
+        # If the hand is over, the environment is asking for dummy actions to distribute final rewards.
+        # This means that the action is a don't care, and will be ignored by the environment.
+        # This also means, that the observation does not correspond to any meaningful choice to be taken, 
+        # and it should be ignored as well.
+        if not observation[indices.HAND_IS_OVER]:
             self.observations.append(observation)
             valid_actions = np.argwhere(observation[indices.VALID_ACTIONS] == 1).flatten()
             valid_bet_low = observation[indices.VALID_BET_LOW]
@@ -42,8 +57,6 @@ class ExampleRandomAgent:
             table_action = Action(chosen_action, bet_size)
             self.actions.append(table_action)
         else:
-            # If the action is "don't care", 
-            # we are only feeding dummy actions to get the final end of hand rewards back
             table_action = Action(PlayerAction.CHECK, 0)
         return table_action
 ```
@@ -53,12 +66,12 @@ class ExampleRandomAgent:
 ```python
 active_players = 6
 agents = [ExampleRandomAgent() for _ in range(6)]
-random_seed = 1
 low_stack_bbs = 50
 high_stack_bbs = 200
 hh_location = 'hands/'
-invalid_penalty = 0
-table = Table(active_players, random_seed, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
+invalid_action_penalty = 0
+table = Table(active_players, low_stack_bbs, high_stack_bbs, hh_location, invalid_penalty)
+table.seed(1)
 ```
 
 ### Implement learning loop
@@ -68,25 +81,25 @@ while True:
     if iteration == 50:
         table.hand_history_enabled = True
         iteration = 0
-    # Set a random number of players for each hand
     table.n_players = np.random.randint(2, 7)
     obs = table.reset()
-    next_acting_player = int(obs[indices.ACTING_PLAYER])
+    acting_player = int(obs[indices.ACTING_PLAYER])
     while True:
-        action = agents[next_acting_player].get_action(obs)
-        action_dont_care = obs[indices.ACTION_DONT_CARE]
-        obs, reward, finished, _ = table.step(action)
-
-        if not action_dont_care:
-            # If the action was not a "don't care", the reward corresponds to the action that we just took
-            agents[next_acting_player].rewards.append(reward)
+        action = agents[acting_player].get_action(obs)
+        obs, reward, done, _ = table.step(action)
+        # If the reward is delayed, we are collecting end of game rewards by feeding in dummy actions
+        delayed_reward = obs[indices.DELAYED_REWARD]
+        
+        if  delayed_reward:
+            # If the reward is delayed, the action we just took was a don't care, 
+            # and the reward corresponds to the last valid action taken
+            agents[acting_player].rewards[-1] += reward
         else:
-            # If the action was a "don't care", 
-            # the reward is a delayed end of game reward which should correspond to the last valid action
-            agents[next_acting_player].rewards[-1] += reward
-        if finished:
+            # Otherwise the reward corresponds to the action we just took
+            agents[acting_player].rewards.append(reward)
+        if done:
             break
-        next_acting_player = int(obs[indices.ACTING_PLAYER])
+        acting_player = int(obs[indices.ACTING_PLAYER])
     iteration += 1
     table.hand_history_enabled = False
 ```

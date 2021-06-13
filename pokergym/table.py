@@ -13,16 +13,21 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, seed, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
+    def __init__(self, n_players, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
         self.action_space = gym.spaces.Tuple((gym.spaces.Discrete(4), gym.spaces.Box(-math.inf, math.inf, (1, 1))))
         self.observation_space = gym.spaces.Box(-math.inf, math.inf, (60, 1))
-        self.current_turn = 0
-        self.rng = np.random.default_rng(seed)
+        self.n_players = n_players
+        self.all_players = [Player(n, 'player_%d' % (n+1), invalid_action_penalty) for n in range(n_players)]
+        self.players = self.all_players[:n_players]
+        self.active_players = n_players
+        self.next_player_i = min(self.n_players-1, 2)
+        self.current_player_i = self.next_player_i
         self.hand_history_location = hand_history_location
         self.hand_history_enabled = False
-        self.history = []
+        self.hand_history = []
         self.stack_low = stack_low
         self.stack_high = stack_high
+        self.current_turn = 0
         self.pot = 0
         self.bet_to_match = 0
         self.minimum_raise = 0
@@ -30,12 +35,7 @@ class Table(gym.Env):
         self.deck = Deck()
         self.evaluator = Evaluator()
         self.cards = []
-        self.n_players = n_players
-        self.all_players = [Player(n, 'player_%d' % (n+1), invalid_action_penalty) for n in range(n_players)]
-        self.players = self.all_players[:n_players]
-        self.active_players = n_players
-        self.next_player_i = min(self.n_players-1, 2)
-        self.current_player_i = self.next_player_i
+        self.rng = np.random.default_rng(None)
         self.street_finished = False
         self.hand_is_over = False
         self.hand_ended_last_turn = False
@@ -69,7 +69,7 @@ class Table(gym.Env):
             player.position = i
             player.cards = [initial_draw[i], initial_draw[i+self.n_players]]
             player.stack = self.rng.integers(self.stack_low, self.stack_high, 1)[0]
-        self.history = []
+        self.hand_history = []
         if self.hand_history_enabled:
             self._history_initialize()
         for i, player in enumerate(self.players):
@@ -92,14 +92,11 @@ class Table(gym.Env):
         self.current_turn += 1
 
         if (player.all_in or player.state is not PlayerState.ACTIVE) and not self.hand_is_over:
-            raise Exception("A player who is inactive or all-in tried to take an action")
-
-        if self.hand_is_over:
-            self.hand_ended_last_turn = True
-
+            raise Exception("A player who is inactive or all-in was allowed to act")
         if self.first_to_act is None:
             self.first_to_act = player
 
+        # Apply the player action
         if not (self.hand_is_over or self.street_finished):
             valid_actions = self._get_valid_actions(player)
             if not self._is_action_valid(player, action, valid_actions):
@@ -149,10 +146,11 @@ class Table(gym.Env):
             players_with_actions = [p for p in self.players if p.state is PlayerState.ACTIVE if not p.all_in]
             players_who_should_act = [p for p in players_with_actions if (not p.acted_this_street or p.bet_this_street != self.bet_to_match)]
 
+            # If the game is over, or the betting street is finished, progress the game state
             if len(players_with_actions) < 2 and len(players_who_should_act) == 0:
                 amount = 0
+                # If all active players are all-in, transition to the end, allowing no actions in the remaining streets
                 if self.active_players > 1:
-                    # Everyone else is all-in or folded, return any uncalled bets and transition to end
                     biggest_bet_call = max(
                         [p.bet_this_street for p in self.players
                          if p.state is PlayerState.ACTIVE if p is not self.last_bet_placed_by]
@@ -163,10 +161,11 @@ class Table(gym.Env):
                     if biggest_bet_call < last_bet_this_street:
                         amount = last_bet_this_street - biggest_bet_call
                     should_transition_to_end = True
+                # If everyone else has folded, end the hand
                 else:
-                    # Everyone else has folded
                     self.hand_is_over = True
                     amount = self.minimum_raise
+                # If there are uncalled bets, return them to the player who placed them
                 if amount > 0:
                     self.pot -= amount
                     self.last_bet_placed_by.stack += amount
@@ -177,6 +176,7 @@ class Table(gym.Env):
                     )
                 if should_transition_to_end:
                     self._street_transition(transition_to_end=True)
+            # If the betting street is still active, choose next player to act
             else:
                 active_players_after = [i for i in range(self.n_players) if i > self.current_player_i if
                                         self.players[i].state is PlayerState.ACTIVE if not self.players[i].all_in]
@@ -248,23 +248,31 @@ class Table(gym.Env):
         for player in self.players:
             player.finish_street()
 
+    def _change_bet_to_match(self, new_amount):
+        self.minimum_raise = new_amount - self.bet_to_match
+        self.bet_to_match = new_amount
+
+    def _write_event(self, text):
+        if self.hand_history_enabled:
+            self.hand_history.append(text)
+
     def _history_initialize(self):
         t = time.localtime()
-        self.history.append("PokerStars Hand #%d: Hold'em No Limit ($%.2f/$%.2f USD) - %d/%d/%d %d:%d:%d ET" %
+        self.hand_history.append("PokerStars Hand #%d: Hold'em No Limit ($%.2f/$%.2f USD) - %d/%d/%d %d:%d:%d ET" %
                             (np.random.randint(2230397, 32303976), SB, BB, t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour,
                              t.tm_min, t.tm_sec))
-        self.history.append("Table 'Wempe III' 6-max Seat #%d is the button" % self.players[min(1, 2)].identifier)
+        self.hand_history.append("Table 'Wempe III' 6-max Seat #2 is the button")
         for i, player in enumerate(self.players):
-            self.history.append("Seat %d: %s ($%.2f in chips)" % (i+1, player.name, player.stack*BB))
+            self.hand_history.append("Seat %d: %s ($%.2f in chips)" % (i+1, player.name, player.stack*BB))
 
     def _write_hole_cards(self):
-        self.history.append("*** HOLE CARDS ***")
+        self.hand_history.append("*** HOLE CARDS ***")
         for i, player in enumerate(self.players):
-            self.history.append("Dealt to %s [%s %s]" %
+            self.hand_history.append("Dealt to %s [%s %s]" %
                                 (player.name, Card.int_to_str(player.cards[0]), Card.int_to_str(player.cards[1])))
 
     def _write_show_down(self):
-        self.history.append("*** SHOW DOWN ***")
+        self.hand_history.append("*** SHOW DOWN ***")
         hand_types = [self.evaluator.class_to_string(self.evaluator.get_rank_class(p.hand_rank))
                         for p in self.players if p.state is PlayerState.ACTIVE]
         for player in self.players:
@@ -273,18 +281,10 @@ class Table(gym.Env):
                 player_hand_type = self.evaluator.class_to_string(self.evaluator.get_rank_class(player.hand_rank))
                 matches = len([m for m in hand_types if m is player_hand_type])
                 multiple = matches > 1
-                self.history.append("%s: shows [%s %s] (%s)" %
+                self.hand_history.append("%s: shows [%s %s] (%s)" %
                                     (player.name, Card.int_to_str(player.cards[0]), Card.int_to_str(player.cards[1]),
                                      pretty_print_hand(player.cards, player_hand_type, self.cards, multiple))
                                     )
-
-    def _write_event(self, text):
-        if self.hand_history_enabled:
-            self.history.append(text)
-
-    def _change_bet_to_match(self, new_amount):
-        self.minimum_raise = new_amount - self.bet_to_match
-        self.bet_to_match = new_amount
 
     def _finish_hand(self):
         for player in self.players:
@@ -312,7 +312,7 @@ class Table(gym.Env):
                                 )
         if self.hand_history_enabled and self.hand_history_location is not None:
             with open('%s' % self.hand_history_location + 'handhistory_%s.txt' % time.time(), 'w') as f:
-                for row in self.history:
+                for row in self.hand_history:
                     f.writelines(row + '\n')
 
     def _distribute_pot(self):
@@ -393,7 +393,7 @@ class Table(gym.Env):
         observation = np.zeros(60, dtype=np.float32)
         observation[0] = player.identifier
         observation[1] = self.hand_is_over
-        observation[2] = int(self.hand_ended_last_turn)
+        observation[2] = self.hand_ended_last_turn
 
         valid_actions = self._get_valid_actions(player)
         for action in valid_actions['actions_list']:
