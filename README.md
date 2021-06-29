@@ -12,7 +12,7 @@ pip install pokerenv
 
 ## Usage information 
 ### Working around delayed rewards
-Due to the fact that final rewards in NL hold'em are sometimes dependent on the actions other players take after you, some extra logic in the learning loop is required to assign rewards to actions taken, which means that <em>the environment can't be directly used with any baseline RL algorithms</em>, which assume that all rewards correspond the action just taken. 
+Due to the fact that final rewards in NL hold'em are sometimes dependent on the actions other players take after you, some extra logic in the learning loop is required to assign rewards to actions taken. <em>This means that the environment can not be directly used with any baseline RL algorithms</em>, which assume that all rewards correspond the action just taken. 
 
 In the learning loop you will have to watch out for two flags in the observation. The HAND_IS_OVER flag signals that the environment is in reward collection mode, where it will ask all players for dummy actions to distribute final rewards. When the HAND_IS_OVER flag is set, all actions passed in to the step() function are ignored, making them "don't cares". The other DELAYED_REWARD flag signals that the reward which was just output by the environment was a result of a "don't care" action, and that the reward should be added to the last valid action taken (by the previously acting player).
 
