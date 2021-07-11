@@ -349,6 +349,7 @@ class Table(gym.Env):
 
     def _is_action_valid(self, player, action, valid_actions):
         action_list, bet_range = valid_actions['actions_list'], valid_actions['bet_range']
+
         if action.action_type not in action_list:
             if PlayerAction.FOLD in action_list:
                 player.fold()
