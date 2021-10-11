@@ -13,11 +13,18 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
+    def __init__(self, n_players, player_names=None, tracked_player_i=None, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
         self.action_space = gym.spaces.Tuple((gym.spaces.Discrete(4), gym.spaces.Box(-math.inf, math.inf, (1, 1))))
         self.observation_space = gym.spaces.Box(-math.inf, math.inf, (60, 1))
         self.n_players = n_players
-        self.all_players = [Player(n, 'player_%d' % (n+1), invalid_action_penalty) for n in range(n_players)]
+        if player_names is None:
+            player_names = {}
+        for player in range(n_players):
+            if player not in player_names.keys():
+                player_names[player] = 'player_%d' % (player+1)
+        self.all_players = [Player(n, player_names[n], invalid_action_penalty) for n in range(n_players)]
+        # If not None, tracked_player_i chooses which players private cards we write to the hand history (for tracking software)
+        self.tracked_player_i = tracked_player_i
         self.players = self.all_players[:n_players]
         self.active_players = n_players
         self.next_player_i = min(self.n_players-1, 2)
@@ -268,8 +275,9 @@ class Table(gym.Env):
     def _write_hole_cards(self):
         self.hand_history.append("*** HOLE CARDS ***")
         for i, player in enumerate(self.players):
-            self.hand_history.append("Dealt to %s [%s %s]" %
-                                (player.name, Card.int_to_str(player.cards[0]), Card.int_to_str(player.cards[1])))
+            if self.tracked_player_i is None or player.identifier == self.tracked_player_i:
+                self.hand_history.append("Dealt to %s [%s %s]" %
+                                    (player.name, Card.int_to_str(player.cards[0]), Card.int_to_str(player.cards[1])))
 
     def _write_show_down(self):
         self.hand_history.append("*** SHOW DOWN ***")
