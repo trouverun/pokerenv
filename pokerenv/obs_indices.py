@@ -1,9 +1,7 @@
 ACTING_PLAYER = 0
-HAND_IS_OVER = 1    # Hand ended this turn
-DELAYED_REWARD = 2  # The reward corresponds to the time step before (result of a don't care action used to fetch final reward)
-VALID_ACTIONS = [*range(3, 7)]
-VALID_BET_LOW = 7
-VALID_BET_HIGH = 8
-ACTING_PLAYER_POSITION = 9
-ACTING_PLAYER_STACK_SIZE = 14
-POT_SIZE = 22
+VALID_ACTIONS = [*range(1, 5)]
+VALID_BET_LOW = 5
+VALID_BET_HIGH = 6
+ACTING_PLAYER_POSITION = 7
+ACTING_PLAYER_STACK_SIZE = 12
+POT_SIZE = 20

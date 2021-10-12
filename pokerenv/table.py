@@ -13,18 +13,18 @@ BB = 5
 
 
 class Table(gym.Env):
-    def __init__(self, n_players, player_names=None, tracked_player_i=None, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
+    def __init__(self, n_players, player_names=None, track_single_player=False, stack_low=50, stack_high=200, hand_history_location='hands/', invalid_action_penalty=0):
         self.action_space = gym.spaces.Tuple((gym.spaces.Discrete(4), gym.spaces.Box(-math.inf, math.inf, (1, 1))))
-        self.observation_space = gym.spaces.Box(-math.inf, math.inf, (60, 1))
+        self.observation_space = gym.spaces.Box(-math.inf, math.inf, (58, 1))
         self.n_players = n_players
         if player_names is None:
             player_names = {}
-        for player in range(n_players):
+        for player in range(6):
             if player not in player_names.keys():
                 player_names[player] = 'player_%d' % (player+1)
-        self.all_players = [Player(n, player_names[n], invalid_action_penalty) for n in range(n_players)]
+        self.all_players = [Player(n, player_names[n], invalid_action_penalty) for n in range(6)]
         # If not None, tracked_player_i chooses which players private cards we write to the hand history (for tracking software)
-        self.tracked_player_i = tracked_player_i
+        self.track_single_player = track_single_player
         self.players = self.all_players[:n_players]
         self.active_players = n_players
         self.next_player_i = min(self.n_players-1, 2)
@@ -45,10 +45,8 @@ class Table(gym.Env):
         self.rng = np.random.default_rng(None)
         self.street_finished = False
         self.hand_is_over = False
-        self.hand_ended_last_turn = False
         self.last_bet_placed_by = None
         self.first_to_act = None
-        self.final_rewards_collected = 0
 
     def seed(self, seed=None):
         self.rng = np.random.default_rng(seed)
@@ -68,8 +66,6 @@ class Table(gym.Env):
         self.first_to_act = None
         self.street_finished = False
         self.hand_is_over = False
-        self.hand_ended_last_turn = False
-        self.final_rewards_collected = 0
         initial_draw = self.deck.draw(self.n_players * 2)
         for i, player in enumerate(self.players):
             player.reset()
@@ -202,19 +198,9 @@ class Table(gym.Env):
         if self.street_finished and not self.hand_is_over:
             self._street_transition()
 
-        if self.hand_is_over:
-            if self.final_rewards_collected == 0:
-                self._distribute_pot()
-                self._finish_hand()
-            self.final_rewards_collected += 1
-            active_players_after = [i for i in range(self.n_players) if i > self.current_player_i]
-            active_players_before = [i for i in range(self.n_players) if i <= self.current_player_i]
-            if len(active_players_after) > 0:
-                self.next_player_i = min(active_players_after)
-            else:
-                self.next_player_i = min(active_players_before)
-
-        return self._get_observation(self.players[self.next_player_i]), player.get_reward(), (self.hand_is_over and self.final_rewards_collected == self.n_players), {}
+        obs = np.zeros(self.observation_space.shape[0]) if self.hand_is_over else self._get_observation(self.players[self.next_player_i])
+        rewards = np.asarray([player.get_reward() for player in sorted(self.players)])
+        return obs, rewards, self.hand_is_over, {}
 
     def _street_transition(self, transition_to_end=False):
         transitioned = False
@@ -275,7 +261,7 @@ class Table(gym.Env):
     def _write_hole_cards(self):
         self.hand_history.append("*** HOLE CARDS ***")
         for i, player in enumerate(self.players):
-            if self.tracked_player_i is None or player.identifier == self.tracked_player_i:
+            if self.track_single_player or player.identifier == 0:
                 self.hand_history.append("Dealt to %s [%s %s]" %
                                     (player.name, Card.int_to_str(player.cards[0]), Card.int_to_str(player.cards[1])))
 
@@ -399,40 +385,38 @@ class Table(gym.Env):
         return {'actions_list': valid_actions, 'bet_range': valid_bet_range}
 
     def _get_observation(self, player):
-        observation = np.zeros(60, dtype=np.float32)
+        observation = np.zeros(self.observation_space.shape[0], dtype=np.float32)
         observation[0] = player.identifier
-        observation[1] = self.hand_is_over
-        observation[2] = self.hand_ended_last_turn
 
         valid_actions = self._get_valid_actions(player)
         for action in valid_actions['actions_list']:
-            observation[action.value+3] = 1
-        observation[7] = valid_actions['bet_range'][0]
-        observation[8] = valid_actions['bet_range'][1]
+            observation[action.value+1] = 1
+        observation[5] = valid_actions['bet_range'][0]
+        observation[6] = valid_actions['bet_range'][1]
 
-        observation[9] = player.position
-        observation[10] = Card.get_suit_int(player.cards[0])
-        observation[11] = Card.get_rank_int(player.cards[0])
-        observation[12] = Card.get_suit_int(player.cards[1])
-        observation[13] = Card.get_rank_int(player.cards[1])
-        observation[14] = player.stack
-        observation[15] = player.money_in_pot
-        observation[16] = player.bet_this_street
+        observation[7] = player.position
+        observation[8] = Card.get_suit_int(player.cards[0])
+        observation[9] = Card.get_rank_int(player.cards[0])
+        observation[10] = Card.get_suit_int(player.cards[1])
+        observation[11] = Card.get_rank_int(player.cards[1])
+        observation[12] = player.stack
+        observation[13] = player.money_in_pot
+        observation[14] = player.bet_this_street
 
-        observation[17] = self.street
+        observation[15] = self.street
         for i in range(len(self.cards)):
-            observation[18 + (i * 2)] = Card.get_suit_int(self.cards[i])
-            observation[19 + (i * 2)] = Card.get_rank_int(self.cards[i])
-        observation[22] = self.pot
-        observation[23] = self.bet_to_match
-        observation[24] = self.minimum_raise
+            observation[16 + (i * 2)] = Card.get_suit_int(self.cards[i])
+            observation[17 + (i * 2)] = Card.get_rank_int(self.cards[i])
+        observation[20] = self.pot
+        observation[21] = self.bet_to_match
+        observation[22] = self.minimum_raise
 
         others = [other for other in self.players if other is not player]
         for i in range(len(others)):
-            observation[25 + i * 6] = others[i].position
-            observation[26 + i * 6] = others[i].state.value
-            observation[27 + i * 6] = others[i].stack
-            observation[28 + i * 6] = others[i].money_in_pot
-            observation[29 + i * 6] = others[i].bet_this_street
-            observation[30 + i * 6] = int(others[i].all_in)
+            observation[23 + i * 6] = others[i].position
+            observation[24 + i * 6] = others[i].state.value
+            observation[25 + i * 6] = others[i].stack
+            observation[26 + i * 6] = others[i].money_in_pot
+            observation[27 + i * 6] = others[i].bet_this_street
+            observation[28 + i * 6] = int(others[i].all_in)
         return observation
