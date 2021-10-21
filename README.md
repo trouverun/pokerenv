@@ -15,7 +15,7 @@ The rewards are output as a numpy array, where the nth element corresponds to re
 
 **The acting player flag contained in the observation does not mean the agents position in the table**. 
 Each player inside the table gets a unique id when the table instance is created, and this id is passed as the acting player flag in the observation.
-This way agents can keep reacting to the same acting player flag value, while still playing from all possible table positions.
+This way agents can keep reacting to the same acting player flag value even after a table reset, while still playing from all possible table positions.
 
 ### Invalid actions
 The environment deals with invalid actions by ignoring them, and either checking or folding automatically. 
