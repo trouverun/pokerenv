@@ -11,7 +11,7 @@ pip install pokerenv
 ```
 
 ## Usage information 
-The rewards are output as a numpy array, where the nth element corresponds to reward given to the agent who was playing when the value of the acting player flag contained in the observation was n.
+The rewards are output as a numpy array, where the nth element corresponds to reward given to the agent, who was playing when the the observation acting player flag value was n.
 
 **The acting player flag contained in the observation does not mean the agents position in the table**. 
 Each player inside the table gets a unique id when the table instance is created, and this id is passed as the acting player flag in the observation.
